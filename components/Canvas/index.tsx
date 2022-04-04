@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CanvasProp } from "./props";
+import { testMap } from "../../constants/maps";
 
 const Canvas = (props: CanvasProp) => {
   // const { innerHeight: HEIGHT, innerWidth: WIDTH } = window;
@@ -10,8 +11,8 @@ const Canvas = (props: CanvasProp) => {
   const canvasRef = useRef(null);
 
   const [coordinates, setCoordinates] = useState({
-    x: 20,
-    y: 20,
+    x: 680,
+    y: 380,
   });
 
   const drawCharacter = useCallback(
@@ -28,8 +29,10 @@ const Canvas = (props: CanvasProp) => {
   // const memoizedDraw = useCallback(draw, [coordinates]);
 
   const drawEnvironment = (ctx: any) => {
-    ctx.fillStyle = "#000000";
-    ctx.fillRect(120, 120, 100, 20);
+    testMap.forEach(({ width, height, x, y }) => {
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(x, y, width, height);
+    });
   };
 
   const handleKeyDown = useCallback(({ key }) => {
