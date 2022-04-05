@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CanvasProp } from "./props";
 import { testMap } from "../../constants/maps";
+import { Wall } from "../../constants/game";
 
 const Canvas = (props: CanvasProp) => {
-  // const { innerHeight: HEIGHT, innerWidth: WIDTH } = window;
   const HEIGHT = 900;
   const WIDTH = 1400;
   const DELTA = 20;
@@ -15,6 +15,25 @@ const Canvas = (props: CanvasProp) => {
     y: 380,
   });
 
+  const walls: Wall[] = useMemo(() => [], []);
+
+  const detectCollision = useCallback(() => {
+    walls.forEach((wall) => {
+      if (wall.hasCollision(coordinates.x, coordinates.y, DELTA, DELTA)) {
+        handleCollision();
+        return;
+      }
+    });
+  }, [coordinates, walls]);
+
+  const handleCollision = () => {
+    // TODO: Supposed to be a game over screen -> Currently resets the character coordinates
+    setCoordinates({
+      x: 680,
+      y: 380,
+    });
+  };
+
   const drawCharacter = useCallback(
     (ctx: any) => {
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
@@ -22,18 +41,25 @@ const Canvas = (props: CanvasProp) => {
       ctx.beginPath();
       ctx.arc(coordinates.x, coordinates.y, 20, 0, Math.PI * 2);
       ctx.fill();
+      detectCollision();
     },
-    [coordinates]
+    [coordinates, detectCollision]
   );
 
   // const memoizedDraw = useCallback(draw, [coordinates]);
 
-  const drawEnvironment = (ctx: any) => {
-    testMap.forEach(({ width, height, x, y }) => {
-      ctx.fillStyle = "#000000";
-      ctx.fillRect(x, y, width, height);
-    });
-  };
+  const drawEnvironment = useCallback(
+    (ctx: any) => {
+      testMap.forEach(({ width, height, x, y }) => {
+        // ctx.fillStyle = "#000000";
+        // ctx.fillRect(x, y, width, height);
+        const wall = new Wall(x, y, width, height, "black");
+        wall.draw(ctx);
+        walls.push(wall);
+      });
+    },
+    [walls]
+  );
 
   const handleKeyDown = useCallback(({ key }) => {
     console.log(key);
@@ -82,15 +108,13 @@ const Canvas = (props: CanvasProp) => {
     }
   }, []);
 
-  // console.log("window", (window.innerWidth * 2) / 3);
-
   useEffect(() => {
     const canvas = canvasRef.current;
     const context = canvas.getContext("2d");
 
     drawCharacter(context);
     drawEnvironment(context);
-  }, [drawCharacter]);
+  }, [drawCharacter, drawEnvironment]);
 
   useEffect(() => {
     document.addEventListener("keydown", handleKeyDown, false);
