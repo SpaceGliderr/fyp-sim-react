@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CanvasProp } from "./props";
 import { testMap } from "../../constants/maps";
-import { Wall } from "../../constants/game";
+import { Robot, Wall } from "../../constants/game";
 
 const Canvas = (props: CanvasProp) => {
   const HEIGHT = 900;
@@ -34,16 +34,19 @@ const Canvas = (props: CanvasProp) => {
     });
   };
 
+  const character: Robot = useMemo(
+    () => new Robot(coordinates.x, coordinates.y, 20, "black"),
+    [coordinates]
+  );
+
   const drawCharacter = useCallback(
     (ctx: any) => {
+      // Reset board
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
-      ctx.fillStyle = "black";
-      ctx.beginPath();
-      ctx.arc(coordinates.x, coordinates.y, 20, 0, Math.PI * 2);
-      ctx.fill();
       detectCollision();
+      character.draw(ctx);
     },
-    [coordinates, detectCollision]
+    [detectCollision, character]
   );
 
   // const memoizedDraw = useCallback(draw, [coordinates]);

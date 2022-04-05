@@ -54,3 +54,30 @@ export class Wall {
     );
   };
 }
+
+export class Robot {
+  // Spawn point
+  private x: number;
+  private y: number;
+  private radius: number;
+  private color: string;
+
+  constructor(x: number, y: number, radius: number, color: string) {
+    this.x = x;
+    this.y = y;
+    this.color = color;
+    this.radius = radius;
+  }
+
+  public draw = (ctx: any) => {
+    // TODO: Draw the robot, complex polygon
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+  };
+
+  public move = (deltaX: number, deltaY: number) => {
+    // TODO: Make more comprehensive movement system
+  };
+}
