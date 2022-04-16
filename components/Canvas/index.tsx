@@ -13,6 +13,7 @@ const Canvas = (props: CanvasProp) => {
   const [coordinates, setCoordinates] = useState({
     x: 680,
     y: 380,
+    deg: 0,
   });
 
   const walls: Wall[] = useMemo(() => [], []);
@@ -31,11 +32,12 @@ const Canvas = (props: CanvasProp) => {
     setCoordinates({
       x: 680,
       y: 380,
+      deg: 0,
     });
   };
 
   const character: Robot = useMemo(
-    () => new Robot(coordinates.x, coordinates.y, 20, "black"),
+    () => new Robot(coordinates.x, coordinates.y, 20, "black", coordinates.deg),
     [coordinates]
   );
 
@@ -72,6 +74,7 @@ const Canvas = (props: CanvasProp) => {
           return {
             ...prev,
             y: prev.y - DELTA,
+            deg: 270,
           };
         });
         break;
@@ -81,6 +84,7 @@ const Canvas = (props: CanvasProp) => {
           return {
             ...prev,
             y: prev.y + DELTA,
+            deg: 90,
           };
         });
 
@@ -91,6 +95,7 @@ const Canvas = (props: CanvasProp) => {
           return {
             ...prev,
             x: prev.x - DELTA,
+            deg: 180,
           };
         });
 
@@ -101,6 +106,7 @@ const Canvas = (props: CanvasProp) => {
           return {
             ...prev,
             x: prev.x + DELTA,
+            deg: 0,
           };
         });
 
