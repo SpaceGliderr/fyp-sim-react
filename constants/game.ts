@@ -135,6 +135,14 @@ export class Pose {
   };
 
   public update = (theta: number) => {};
+
+  public getTheta = () => {
+    return this.theta;
+  };
+
+  public getVector = () => {
+    return this.vector;
+  };
 }
 
 export class Wall {
@@ -191,6 +199,31 @@ export class Wall {
       y >= this.y &&
       y <= this.y + this.height
     );
+  };
+
+  public getLines = () => {
+    return [
+      {
+        pt1: new Vector(this.x, this.y),
+        pt2: new Vector(this.x + this.width, this.y),
+      },
+      {
+        pt1: new Vector(this.x + this.width, this.y),
+        pt2: new Vector(this.x + this.width, this.y + this.height),
+      },
+      {
+        pt1: new Vector(this.x + this.width, this.y + this.height),
+        pt2: new Vector(this.x, this.y + this.height),
+      },
+      {
+        pt1: new Vector(this.x, this.y + this.height),
+        pt2: new Vector(this.x, this.y),
+      },
+    ];
+  };
+
+  public getVector = () => {
+    return new Vector(this.x, this.y);
   };
 }
 
@@ -297,20 +330,21 @@ export class Robot {
     });
   }
 
-  public draw = (ctx: any) => {
-    // TODO: Draw the robot, complex polygon
+  public draw = (ctx: any, walls: Wall[]) => {
     ctx.fillStyle = this.color;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill();
     this.pose.drawTri(ctx);
-    this.sensors.forEach((sensor) => {
-      sensor.draw(ctx);
-    });
     this.prxSensors.forEach((sensor) => {
-      sensor.draw(ctx);
+      sensor.draw(ctx, walls);
+    });
+    this.sensors.forEach((sensor) => {
+      sensor.draw(ctx, walls);
     });
   };
+
+  public readSensors = () => {};
 
   // Used to update the position of the robot
   public update = (theta: number) => {};
@@ -325,6 +359,7 @@ export class IRSensor {
   private pose: Pose;
   private name: string;
   private distance: number;
+  private reading: Vector | null = null;
 
   constructor(name: string, pose: Pose) {
     this.name = name;
@@ -332,8 +367,85 @@ export class IRSensor {
     this.distance = 25; // in cm
   }
 
-  public draw = (ctx: any) => {
+  public draw = (ctx: any, walls: Wall[]) => {
     this.pose.drawArc(ctx);
+
+    // Render the sight of the sensor
+    // 0.7 cm = 1 pixel
+    const theta = this.pose.getTheta();
+    const x = this.pose.getVector().getX();
+    const y = this.pose.getVector().getY();
+
+    walls.forEach((wall) => {
+      const lines = wall.getLines();
+      lines.forEach((line) => {
+        const { pt1, pt2 } = line;
+
+        if (
+          intersects(
+            new Vector(x, y),
+            new Vector(36 * Math.cos(theta) + x, 36 * Math.sin(theta) + y),
+            pt1,
+            pt2
+          )
+        ) {
+          console.log("Intersects", pt1, pt2);
+
+          console.log(
+            "Intersection point",
+            findIntersectPoint(
+              new Vector(x, y),
+              new Vector(36 * Math.cos(theta) + x, 36 * Math.sin(theta) + y),
+              pt1,
+              pt2
+            )
+          );
+
+          // Cannot just find intersect point. Lines are infinite, and does not account for the magnitude
+          this.setReading(
+            findIntersectPoint(
+              new Vector(x, y),
+              new Vector(36 * Math.cos(theta) + x, 36 * Math.sin(theta) + y),
+              pt1,
+              pt2
+            )
+          );
+        }
+      });
+    });
+
+    ctx.beginPath();
+    ctx.strokeStyle = "green";
+    ctx.moveTo(x, y);
+
+    if (this.reading) {
+      ctx.lineTo(this.reading.getX(), this.reading.getY());
+      ctx.closePath();
+      ctx.stroke();
+
+      // Render intersect point
+      ctx.arc(this.reading.getX(), this.reading.getY(), 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.lineTo(36 * Math.cos(theta) + x, 36 * Math.sin(theta) + y);
+      ctx.closePath();
+      ctx.stroke();
+    }
+  };
+
+  public setReading = (newReading: Vector | null) => {
+    if (newReading == null) return;
+
+    if (this.reading == null) {
+      this.reading = newReading;
+    }
+
+    if (
+      distanceBetweenPoints(this.pose.getVector(), newReading) <
+      distanceBetweenPoints(this.pose.getVector(), this.reading)
+    ) {
+      this.reading = newReading;
+    }
   };
 
   public read = (ctx: any) => {};
@@ -343,6 +455,7 @@ export class PRXSensor {
   private pose: Pose;
   private name: string;
   private distance: number;
+  private reading: Vector | null = null;
 
   constructor(name: string, pose: Pose) {
     this.name = name;
@@ -350,9 +463,167 @@ export class PRXSensor {
     this.distance = 25; // in cm
   }
 
-  public draw = (ctx: any) => {
+  public draw = (ctx: any, walls: Wall[]) => {
     this.pose.draw(ctx);
+
+    // Render the sight of the sensor
+    // 0.7 cm = 1 pixel
+    const theta = this.pose.getTheta();
+    const x = this.pose.getVector().getX();
+    const y = this.pose.getVector().getY();
+
+    walls.forEach((wall) => {
+      const lines = wall.getLines();
+      lines.forEach((line) => {
+        const { pt1, pt2 } = line;
+
+        if (
+          intersects(
+            new Vector(x, y),
+            new Vector(286 * Math.cos(theta) + x, 286 * Math.sin(theta) + y),
+            pt1,
+            pt2
+          )
+        ) {
+          console.log("Intersects", pt1, pt2);
+
+          console.log(
+            "Intersection point",
+            findIntersectPoint(
+              new Vector(x, y),
+              new Vector(286 * Math.cos(theta) + x, 286 * Math.sin(theta) + y),
+              pt1,
+              pt2
+            )
+          );
+
+          // Cannot just find intersect point. Lines are infinite, and does not account for the magnitude
+          this.setReading(
+            findIntersectPoint(
+              new Vector(x, y),
+              new Vector(286 * Math.cos(theta) + x, 286 * Math.sin(theta) + y),
+              pt1,
+              pt2
+            )
+          );
+        }
+      });
+    });
+
+    ctx.beginPath();
+    ctx.strokeStyle = "red";
+    ctx.moveTo(x, y);
+
+    if (this.reading) {
+      ctx.lineTo(this.reading.getX(), this.reading.getY());
+      ctx.closePath();
+      ctx.stroke();
+
+      // Render intersect point
+      ctx.arc(this.reading.getX(), this.reading.getY(), 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.lineTo(286 * Math.cos(theta) + x, 286 * Math.sin(theta) + y);
+      ctx.closePath();
+      ctx.stroke();
+    }
+  };
+
+  public setReading = (newReading: Vector | null) => {
+    if (newReading == null) return;
+
+    if (this.reading == null) {
+      this.reading = newReading;
+    }
+
+    if (
+      distanceBetweenPoints(this.pose.getVector(), newReading) <
+      distanceBetweenPoints(this.pose.getVector(), this.reading)
+    ) {
+      this.reading = newReading;
+    }
   };
 
   public read = (ctx: any) => {};
 }
+
+const distanceBetweenPoints = (p1: Vector, p2: Vector) => {
+  return Math.sqrt(
+    Math.pow(p1.getX() - p2.getX(), 2) + Math.pow(p1.getY() - p2.getY(), 2)
+  );
+};
+
+// const crossProduct = (p1: Vector, p2: Vector, p3: Vector, p4: Vector) => {
+//   return p1.getX() * p2.getY() - p1.getY() * p2.getX();
+// };
+
+const orientation = (p1: Vector, p2: Vector, p3: Vector) => {
+  return (
+    (p2.getX() - p3.getX()) * (p1.getY() - p3.getY()) -
+    (p1.getX() - p3.getX()) * (p2.getY() - p3.getY())
+  );
+};
+
+const intersects = (p1: Vector, p2: Vector, p3: Vector, p4: Vector) => {
+  const p1p2p3 = orientation(p1, p2, p3);
+  const p1p2p4 = orientation(p1, p2, p4);
+  const p3p4p1 = orientation(p3, p4, p1);
+  const p3p4p2 = orientation(p3, p4, p2);
+
+  // If the points are collinear, the sum of all orientation calculations will be 0
+  // Next would be to check if they overlap
+  if (p1p2p3 + p1p2p4 + p3p4p1 + p3p4p2 == 0) {
+    return (
+      (p1.getX() >= p3.getX() && p1.getX() <= p4.getX()) ||
+      (p2.getX() >= p3.getX() && p2.getX() <= p4.getX())
+    );
+  }
+
+  // If p1p2p3 is +ve, then p1p2p4 must be -ve
+  // If p1p2p3 is -ve, then p1p2p4 must be +ve
+  // If p3p4p1 is +ve, then p3p4p2 must be -ve
+  // If p3p4p1 is -ve, then p3p4p2 must be +ve
+  // Therefore, multiply the results, if they are negative, then they are at opposite ends of the line
+  // If they are positive, then they are on the same side of the line
+  if (p1p2p3 * p1p2p4 <= 0 && p3p4p1 * p3p4p2 <= 0) {
+    return true;
+  }
+
+  return false;
+};
+
+const findIntersectPoint = (p1: Vector, p2: Vector, p3: Vector, p4: Vector) => {
+  // https://dirask.com/posts/JavaScript-calculate-intersection-point-of-two-lines-for-given-4-points-VjvnAj
+  const x1 = p1.getX();
+  const y1 = p1.getY();
+  const x2 = p2.getX();
+  const y2 = p2.getY();
+  const x3 = p3.getX();
+  const y3 = p3.getY();
+  const x4 = p4.getX();
+  const y4 = p4.getY();
+
+  const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+
+  if (denom === 0) {
+    return null; // Null means no intersect detected
+  }
+
+  const numerator1 =
+    (x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4);
+  const numerator2 =
+    (x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4);
+
+  // Alternate algorithm to calculate the intersection point
+  // const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
+
+  // const x = x1 + t * (x2 - x1);
+  // const y = y1 + t * (y2 - y1);
+
+  const x = numerator1 / denom;
+  const y = numerator2 / denom;
+
+  // console.log(x, y);
+
+  return new Vector(x, y);
+};
