@@ -46,9 +46,9 @@ const Canvas = (props: CanvasProp) => {
       // Reset board
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
       detectCollision();
-      character.draw(ctx);
+      character.draw(ctx, walls);
     },
-    [detectCollision, character]
+    [detectCollision, character, walls]
   );
 
   // const memoizedDraw = useCallback(draw, [coordinates]);
