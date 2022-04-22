@@ -47,6 +47,10 @@ const Canvas = (props: CanvasProp) => {
       ctx.clearRect(0, 0, WIDTH, HEIGHT);
       detectCollision();
       character.draw(ctx, walls);
+      // Testing for differential drive
+      // const pose = character.differentialDrive(160, 20, 0);
+      // console.log("🚀 ~ file: index.tsx ~ line 51 ~ Canvas ~ pose", pose);
+      // character.draw(ctx, walls);
     },
     [detectCollision, character, walls]
   );
