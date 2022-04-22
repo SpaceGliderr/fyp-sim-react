@@ -1,4 +1,4 @@
-import { Line } from "../coordinates";
+import { Line } from "./coordinates";
 
 export class MathHelper {
   public static intersects = (l1: Line, l2: Line) => {};
