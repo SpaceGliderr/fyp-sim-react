@@ -191,8 +191,6 @@ export class Wall {
     //   y >= this.y &&
     //   y <= this.y + this.height;
 
-    // TODO: Update this collision detection system once the character is changed from a circle to a more complex polygon
-
     return (
       x >= this.x &&
       x <= this.x + this.width &&
@@ -316,18 +314,19 @@ export class Robot {
     this.color = color;
     this.radius = radius;
     this.pose = new Pose(new Vector(x, y), degToRad(deg)); // Pose dictates the direction which the bot faces, the head will always be facing East when it spawns
-    // this.sensors = IR_SENSORS.map(({ name, theta }) => {
-    //   return new IRSensor(
-    //     name,
-    //     new Pose(new Vector(x, y), degToRad(theta) + degToRad(deg))
-    //   );
-    // });
-    // this.prxSensors = PRX_SENSORS.map(({ name, theta }) => {
-    //   return new PRXSensor(
-    //     name,
-    //     new Pose(new Vector(x, y), degToRad(theta) + degToRad(deg))
-    //   );
-    // });
+    // TODO: Uncomment this once the robot movement is implemented
+    this.sensors = IR_SENSORS.map(({ name, theta }) => {
+      return new IRSensor(
+        name,
+        new Pose(new Vector(x, y), degToRad(theta) + degToRad(deg))
+      );
+    });
+    this.prxSensors = PRX_SENSORS.map(({ name, theta }) => {
+      return new PRXSensor(
+        name,
+        new Pose(new Vector(x, y), degToRad(theta) + degToRad(deg))
+      );
+    });
   }
 
   public draw = (ctx: any, walls: Wall[]) => {
@@ -351,6 +350,42 @@ export class Robot {
 
   public move = (deltaX: number, deltaY: number) => {
     // TODO: Make more comprehensive movement system using the unicycle model
+  };
+
+  // public setWheelDriveRates = (driveRateL: number, driveRateR: number) => {}
+
+  public differentialDrive = (
+    dt: number, // Must be in degree
+    driveRateL: number,
+    driveRateR: number
+  ) => {
+    // TODO: Get the min drive rates, make sure it doesn't go above the max
+    // Drive rates are in rad / sec
+
+    const deltaTheta = degToRad(dt);
+
+    // Calculate change in wheel angle
+    const deltaThetaL = driveRateL * deltaTheta;
+    const deltaThetaR = driveRateR * deltaTheta;
+
+    // Calculate distance traveled
+    const wheelMetersPerRad = 0.5; // TODO: Get this from the robot wheel radius
+    const dLeftWheel = wheelMetersPerRad * deltaThetaL;
+    const dRightWheel = wheelMetersPerRad * deltaThetaR;
+    const dCenter = (dLeftWheel + dRightWheel) / 2;
+
+    // Calculate new pose
+    const newX =
+      this.pose.getVector().getX() + dCenter * Math.cos(this.pose.getTheta());
+    const newY =
+      this.pose.getVector().getY() + dCenter * Math.sin(this.pose.getTheta());
+    const newTheta =
+      this.pose.getTheta() + (dRightWheel - dLeftWheel) / this.radius;
+    const newPose = new Pose(new Vector(newX, newY), newTheta);
+
+    // Update pose
+    this.pose = newPose;
+    return newPose;
   };
 }
 
