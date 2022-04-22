@@ -67,7 +67,7 @@ const Canvas = (props: CanvasProp) => {
   );
 
   const handleKeyDown = useCallback(({ key }) => {
-    console.log(key);
+    // console.log(key);
     switch (key) {
       case "ArrowUp":
         setCoordinates((prev) => {

@@ -300,8 +300,8 @@ export class Robot {
   private y: number;
   private radius: number;
   private color: string;
-  private sensors: IRSensor[];
-  private prxSensors: PRXSensor[];
+  private sensors: IRSensor[] = [];
+  private prxSensors: PRXSensor[] = [];
   private pose: Pose;
 
   constructor(
@@ -316,18 +316,18 @@ export class Robot {
     this.color = color;
     this.radius = radius;
     this.pose = new Pose(new Vector(x, y), degToRad(deg)); // Pose dictates the direction which the bot faces, the head will always be facing East when it spawns
-    this.sensors = IR_SENSORS.map(({ name, theta }) => {
-      return new IRSensor(
-        name,
-        new Pose(new Vector(x, y), degToRad(theta) + degToRad(deg))
-      );
-    });
-    this.prxSensors = PRX_SENSORS.map(({ name, theta }) => {
-      return new PRXSensor(
-        name,
-        new Pose(new Vector(x, y), degToRad(theta) + degToRad(deg))
-      );
-    });
+    // this.sensors = IR_SENSORS.map(({ name, theta }) => {
+    //   return new IRSensor(
+    //     name,
+    //     new Pose(new Vector(x, y), degToRad(theta) + degToRad(deg))
+    //   );
+    // });
+    // this.prxSensors = PRX_SENSORS.map(({ name, theta }) => {
+    //   return new PRXSensor(
+    //     name,
+    //     new Pose(new Vector(x, y), degToRad(theta) + degToRad(deg))
+    //   );
+    // });
   }
 
   public draw = (ctx: any, walls: Wall[]) => {
