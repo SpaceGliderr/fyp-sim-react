@@ -40,7 +40,8 @@ const Canvas = (props: CanvasProp) => {
 
     // Render the static obstacles
     simulator.renderStaticObstacles();
-  }, [simulator]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ========================= COMPONENT RENDERING =========================
   // This useEffect hook will act as the game play loop
@@ -58,13 +59,13 @@ const Canvas = (props: CanvasProp) => {
   return (
     <div>
       <canvas
-        className="absolute top-0 left-24"
+        className="absolute top-5 left-24"
         width={width}
         height={height}
         ref={staticCanvasRef}
       />
       <canvas
-        className="border-black border-2 border-solid absolute top-0 left-24"
+        className="border-black border-2 border-solid absolute top-5 left-24"
         width={width}
         height={height}
         ref={dynamicCanvasRef}
