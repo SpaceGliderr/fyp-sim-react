@@ -40,7 +40,7 @@ export class CircleObstacle extends Obstacle {
   private point: Point;
   private radius: number;
 
-  constructor(color: string, point: Point, radius: number) {
+  constructor(point: Point, radius: number, color?: string) {
     super(color);
     this.point = point;
     this.radius = radius;
@@ -48,6 +48,14 @@ export class CircleObstacle extends Obstacle {
 
   public render = () => {
     CanvasHelper.drawArc(this.point, this.radius, this.getColor());
+  };
+
+  public getRadius = () => {
+    return this.radius;
+  };
+
+  public getPoint = () => {
+    return this.point;
   };
 }
 
@@ -67,6 +75,10 @@ export class PolygonObstacle extends Obstacle {
 
   public getLines = () => {
     return this.lines;
+  };
+
+  public getPoints = () => {
+    return this.points;
   };
 }
 

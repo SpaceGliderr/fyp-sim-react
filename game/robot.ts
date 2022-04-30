@@ -19,9 +19,9 @@ enum RobotStatus {
 }
 
 export class Robot {
-  private static RADIUS = ROBOT_RADIUS * PIXEL_TO_CM_RATIO;
-  private static COLOR = ROBOT_COLOR;
-  private static HEADING_COLOR = ROBOT_HEADING_COLOR;
+  public static readonly RADIUS = ROBOT_RADIUS * PIXEL_TO_CM_RATIO;
+  public static readonly COLOR = ROBOT_COLOR;
+  public static readonly HEADING_COLOR = ROBOT_HEADING_COLOR;
   private pose: Pose;
   private irSensors: IRSensor[];
   private usSensors: USSensor[];
@@ -51,6 +51,10 @@ export class Robot {
 
   public setPose = (pose: Pose) => {
     this.pose = pose;
+  };
+
+  public getPose = () => {
+    return this.pose;
   };
 
   public render = () => {
