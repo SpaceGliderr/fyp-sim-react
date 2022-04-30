@@ -1,5 +1,6 @@
+import { Collision } from "../utils/collision";
 import { Map } from "./map";
-import { DynamicObstacle, PolygonObstacle } from "./obstacles";
+import { CircleObstacle, DynamicObstacle, PolygonObstacle } from "./obstacles";
 import { Robot } from "./robot";
 
 export class Simulator {
@@ -32,4 +33,22 @@ export class Simulator {
       robot.updateSensors(this.staticObstacles);
     });
   };
+
+  public checkForCollisions = () => {
+    this.staticObstacles.forEach((obstacle, index) => {
+      if (index == 0) return; // Skip past the first obstacle because that defines the boundaries of the environment
+      this.robots.forEach((robot) => {
+        if (
+          Collision.circlePolygonIntersect(
+            obstacle,
+            new CircleObstacle(robot.getPose().getPoint(), Robot.RADIUS)
+          )
+        ) {
+          console.log("Collision detected");
+        }
+      });
+    });
+  };
+
+  public resolveCollision = () => {};
 }
