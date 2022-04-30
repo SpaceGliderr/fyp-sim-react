@@ -27,6 +27,22 @@ export class Point {
 
     return Math.sqrt(Math.pow(x - x2, 2) + Math.pow(y - y2, 2));
   };
+
+  public getAxis = () => {
+    return new Point(-this.y, this.x);
+  };
+
+  public multiply = (scalar: number) => {
+    return new Point(this.x * scalar, this.y * scalar);
+  };
+
+  public add = (point: Point) => {
+    return new Point(this.x + point.getX(), this.y + point.getY());
+  };
+
+  public subtract = (point: Point) => {
+    return new Point(this.x - point.getX(), this.y - point.getY());
+  };
 }
 
 export class Vector extends Point {}
@@ -127,6 +143,13 @@ export class Line {
     const y = numerator2 / denom;
 
     return new Point(x, y);
+  };
+
+  public getEdge = () => {
+    return new Point(
+      this.p1.getX() - this.p2.getX(),
+      this.p1.getY() - this.p2.getY()
+    );
   };
 }
 
