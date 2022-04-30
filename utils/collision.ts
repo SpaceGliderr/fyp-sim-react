@@ -46,7 +46,6 @@ export class Collision {
 
     let axis = cp.subtract(circle.getPoint());
     axis = MathHelper.normalize(axis);
-    CanvasHelper.drawArc(axis, 10, "green");
 
     const { min: minA, max: maxA } = MathHelper.projectVertices(
       polygon.getPoints(),
