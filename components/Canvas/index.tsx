@@ -40,6 +40,7 @@ const Canvas = (props: CanvasProp) => {
 
     // Render the static obstacles
     simulator.renderStaticObstacles();
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -54,6 +55,34 @@ const Canvas = (props: CanvasProp) => {
 
     // Initialize robots
     simulator.renderRobots();
+
+    // Check for collisions
+    simulator.checkForCollisions();
+
+    // Learning Separate Axis Theorem
+    // const polygon1 = new PolygonObstacle(
+    //   [
+    //     new Point(600, 0),
+    //     new Point(640, 0),
+    //     new Point(640, 400),
+    //     new Point(600, 400),
+    //   ],
+    //   "red"
+    // );
+
+    // polygon1.render();
+
+    // const polygon2 = new CircleObstacle(
+    //   new Point(610, 420),
+    //   Robot.RADIUS,
+    //   "blue",
+    // );
+
+    // polygon2.render();
+
+    // if (Collision.circlePolygonIntersect(polygon1, polygon2)) {
+    //   console.log("Collision detected");
+    // }
   }, [simulator]);
 
   return (
