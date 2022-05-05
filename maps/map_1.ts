@@ -16,7 +16,11 @@ export const MAP_1: MapTemplate = {
   width: WIDTH,
   height: HEIGHT,
   robotCount: 1,
-  robotStartPositions: [new Point(680, 360)],
+  robotStartPositions: [
+    new Point(680, 260),
+    new Point(450, 500),
+    new Point(1000, 650),
+  ],
   staticObstacles: [
     // The first obstacle is the boundary for the map
     new PolygonObstacle([
