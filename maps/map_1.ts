@@ -1,3 +1,4 @@
+import { Goal, GoalShape } from "../game/goal";
 import { MapTemplate } from "../game/map";
 import { PolygonObstacle } from "../game/obstacles";
 import { Point } from "../utils/coordinates";
@@ -21,6 +22,7 @@ export const MAP_1: MapTemplate = {
     new Point(450, 450),
     new Point(950, 650),
   ],
+  goals: [new Goal([new Point(740, 30)], GoalShape.CIRCLE, 7)],
   staticObstacles: [
     // The first obstacle is the boundary for the map
     new PolygonObstacle([
