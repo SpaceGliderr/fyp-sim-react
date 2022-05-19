@@ -131,7 +131,7 @@ export class Line {
     const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
 
     if (denom === 0) {
-      throw new Error("No intersect found");
+      // throw new Error("No intersect found"); // !: For some reason this causes errors when the pose of the robot is manually entered?
     }
 
     const numerator1 =

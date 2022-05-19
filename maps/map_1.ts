@@ -18,8 +18,8 @@ export const MAP_1: MapTemplate = {
   robotCount: 1,
   robotStartPositions: [
     new Point(680, 260),
-    new Point(450, 500),
-    new Point(1000, 650),
+    new Point(450, 450),
+    new Point(950, 650),
   ],
   staticObstacles: [
     // The first obstacle is the boundary for the map

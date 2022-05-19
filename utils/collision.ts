@@ -63,4 +63,17 @@ export class Collision {
 
     return collision;
   };
+
+  public static circleCircleIntersect = (
+    c1: CircleObstacle,
+    c2: CircleObstacle
+  ) => {
+    const { point: cp1, radius: cr1 } = c1.unpack();
+    const { point: cp2, radius: cr2 } = c2.unpack();
+
+    const dist = cp1.distanceTo(cp2);
+    const totalRadius = cr1 + cr2;
+
+    return dist < totalRadius;
+  };
 }
