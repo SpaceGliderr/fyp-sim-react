@@ -27,3 +27,5 @@ export const UPDATES_PER_SECOND = 30;
 export const TICKS_PER_UPDATE = 1000 / UPDATES_PER_SECOND;
 
 export const SENSOR_TICKS_PER_UPDATE = 20; // Sensors always update at a pace of 20 ms
+
+export const GOAL_COLOR = "#e8874a";
