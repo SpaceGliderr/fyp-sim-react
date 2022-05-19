@@ -21,3 +21,9 @@ export const ROBOT_HEADING_COLOR = "#183d22";
 export const IR_SENSOR_COLOR = "#ff0000";
 
 export const US_SENSOR_COLOR = "#0000ff";
+
+export const UPDATES_PER_SECOND = 30;
+
+export const TICKS_PER_UPDATE = 1000 / UPDATES_PER_SECOND;
+
+export const SENSOR_TICKS_PER_UPDATE = 20; // Sensors always update at a pace of 20 ms
