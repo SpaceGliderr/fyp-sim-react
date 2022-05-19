@@ -51,10 +51,35 @@ export class Robot {
 
   public setPose = (pose: Pose) => {
     this.pose = pose;
+
+    // Update sensor bearings based on the new pose
+    this.irSensors = IR_SENSOR_LOCS.map((loc) => {
+      return new IRSensor(
+        new Pose(
+          this.pose.getPoint(),
+          MathHelper.degToRad(loc) + this.pose.getTheta()
+        )
+      );
+    });
+    this.usSensors = US_SENSOR_LOCS.map((loc) => {
+      return new USSensor(
+        new Pose(
+          this.pose.getPoint(),
+          MathHelper.degToRad(loc) + this.pose.getTheta()
+        )
+      );
+    });
   };
 
   public getPose = () => {
     return this.pose;
+  };
+
+  public getSensors = () => {
+    return {
+      irSensors: this.irSensors,
+      usSensors: this.usSensors,
+    };
   };
 
   public render = () => {
@@ -106,8 +131,7 @@ export class Robot {
       this.pose.getPoint().getX() + dCenter * Math.cos(this.pose.getTheta());
     const newY =
       this.pose.getPoint().getY() + dCenter * Math.sin(this.pose.getTheta());
-    const newTheta =
-      this.pose.getTheta() + (dRightWheel - dLeftWheel) / Robot.RADIUS;
+    const newTheta = this.pose.getTheta() + (dRightWheel - dLeftWheel) / 1;
 
     this.setPose(new Pose(new Vector(newX, newY), newTheta));
   };
