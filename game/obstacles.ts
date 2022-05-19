@@ -57,6 +57,14 @@ export class CircleObstacle extends Obstacle {
   public getPoint = () => {
     return this.point;
   };
+
+  public unpack = () => {
+    return {
+      point: this.point,
+      radius: this.radius,
+      color: this.getColor(),
+    };
+  };
 }
 
 export class PolygonObstacle extends Obstacle {
