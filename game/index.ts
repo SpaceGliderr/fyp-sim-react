@@ -1,4 +1,5 @@
 import { Collision } from "../utils/collision";
+import { Goal } from "./goal";
 import { Map } from "./map";
 import { CircleObstacle, DynamicObstacle, PolygonObstacle } from "./obstacles";
 import { Robot } from "./robot";
@@ -7,13 +8,22 @@ export class Simulator {
   private robots: Robot[];
   private staticObstacles: PolygonObstacle[];
   private dynamicObstacles?: DynamicObstacle[]; // TODO: Make this at a later date
+  private goals?: Goal[];
 
   constructor(map: Map) {
-    const { robotStartPositions, staticObstacles, dynamicObstacles } =
+    const { robotStartPositions, staticObstacles, dynamicObstacles, goals } =
       map.unpack();
-    this.robots = robotStartPositions.map((position) => new Robot(position));
+    this.robots = robotStartPositions.map((position, index) => {
+      // Assign predefined goal to each robot if the goal exists
+      if (map.getGoal(index)) {
+        return new Robot(position, map.getGoal(index));
+      }
+      // Otherwise, no goal is needed
+      return new Robot(position);
+    });
     this.staticObstacles = staticObstacles;
     this.dynamicObstacles = dynamicObstacles;
+    this.goals = goals;
   }
 
   public getRobots = () => {
