@@ -17,14 +17,21 @@ export class Goal {
   private shape: GoalShape;
   private obstacle: CircleObstacle | PolygonObstacle;
   private status: GoalStatus = GoalStatus.NOT_REACHED;
+  private robotId: number;
 
-  constructor(point: Point[], shape: GoalShape, radius?: number) {
+  constructor(
+    point: Point[],
+    shape: GoalShape,
+    robotId: number,
+    radius?: number
+  ) {
     this.point = point;
     this.shape = shape;
     this.obstacle =
       shape == GoalShape.CIRCLE && radius
         ? new CircleObstacle(point[0], radius, GOAL_COLOR)
         : new PolygonObstacle(point, GOAL_COLOR);
+    this.robotId = robotId;
   }
 
   public render = () => {
@@ -37,10 +44,15 @@ export class Goal {
       shape: this.shape,
       obstacle: this.obstacle,
       status: this.status,
+      robotId: this.robotId,
     };
   };
 
   public setStatusToReached = () => {
     this.status = GoalStatus.REACHED;
+  };
+
+  public getRobotId = () => {
+    return this.robotId;
   };
 }

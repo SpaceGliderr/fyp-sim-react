@@ -2,7 +2,7 @@ import { CanvasHelper } from "../utils/canvas";
 import { Line, Pose, Vector } from "../utils/coordinates";
 import { MathHelper } from "../utils/math";
 import { Goal } from "./goal";
-import { PolygonObstacle } from "./obstacles";
+import { CircleObstacle, PolygonObstacle } from "./obstacles";
 import { IRSensor, USSensor } from "./sensor";
 import {
   IR_SENSOR_LOCS,
@@ -19,7 +19,7 @@ enum RobotStatus {
   TRANSIT = "TRANSIT", // When the robot is moving from point A to point B
 }
 
-export class Robot {
+export class Robot extends CircleObstacle {
   public static readonly RADIUS = ROBOT_RADIUS * PIXEL_TO_CM_RATIO;
   public static readonly COLOR = ROBOT_COLOR;
   public static readonly HEADING_COLOR = ROBOT_HEADING_COLOR;
@@ -29,8 +29,10 @@ export class Robot {
   private status: RobotStatus = RobotStatus.IDLE;
   private currentGoal: Goal | undefined = undefined; // A robot's current goal can be undefined
   private activityHistory: Goal[] = [];
+  private id: number;
 
-  constructor(vector: Vector, goal?: Goal) {
+  constructor(vector: Vector, id: number, goal?: Goal) {
+    super(vector, ROBOT_RADIUS);
     this.pose = new Pose(vector, MathHelper.degToRad(Math.random() * 360)); // Spawn heading is random
     this.irSensors = IR_SENSOR_LOCS.map((loc) => {
       return new IRSensor(
@@ -43,6 +45,7 @@ export class Robot {
       );
     });
     this.currentGoal = goal;
+    this.id = id;
   }
 
   public setStatus = (status: RobotStatus) => {
@@ -157,5 +160,8 @@ export class Robot {
 
       this.currentGoal = undefined;
     }
+  };
+  public getId = () => {
+    return this.id;
   };
 }
