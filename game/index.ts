@@ -16,11 +16,17 @@ export class Simulator {
     this.dynamicObstacles = dynamicObstacles;
   }
 
+  public getRobots = () => {
+    return this.robots;
+  };
+
   public renderStaticObstacles = () => {
     this.staticObstacles.forEach((obstacle) => {
       obstacle.render(true);
     });
   };
+
+  public renderDynamicObstacles = () => {};
 
   public renderRobots = () => {
     this.robots.forEach((robot) => {
