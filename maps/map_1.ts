@@ -22,7 +22,7 @@ export const MAP_1: MapTemplate = {
     new Point(450, 450),
     new Point(950, 650),
   ],
-  goals: [new Goal([new Point(740, 30)], GoalShape.CIRCLE, 7)],
+  goals: [new Goal([new Point(740, 30)], GoalShape.CIRCLE, 0, 7)],
   staticObstacles: [
     // The first obstacle is the boundary for the map
     new PolygonObstacle([
