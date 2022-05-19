@@ -1,4 +1,3 @@
-import { get } from "lodash";
 import { Point } from "../utils/coordinates";
 import { Goal } from "./goal";
 import { DynamicObstacle, PolygonObstacle } from "./obstacles";
@@ -41,9 +40,5 @@ export class Map {
       height: this.height,
       goals: this.goals,
     };
-  };
-
-  public getGoal = (idx: number) => {
-    return get(this.goals, idx, undefined);
   };
 }
