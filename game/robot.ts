@@ -13,7 +13,7 @@ import {
   US_SENSOR_LOCS,
 } from "./settings";
 
-enum RobotStatus {
+export enum RobotStatus {
   IDLE = "IDLE", // When the robot is not doing anything
   PROCESSING = "PROCESSING", // When the robot is processing data
   TRANSIT = "TRANSIT", // When the robot is moving from point A to point B
@@ -152,7 +152,7 @@ export class Robot extends CircleObstacle {
     this.currentGoal = goal;
   };
 
-  public goalReached = () => {
+  private goalReached = () => {
     if (this.currentGoal) {
       this.currentGoal.setStatusToReached();
 
@@ -161,6 +161,23 @@ export class Robot extends CircleObstacle {
       this.currentGoal = undefined;
     }
   };
+
+  public checkGoal = () => {
+    if (this.currentGoal && this.currentGoal.checkForCollisionWithRobot(this)) {
+      this.goalReached();
+      return this.id;
+    }
+    return null;
+  };
+
+  public setCurrentGoal = (currentGoal: Goal) => {
+    this.currentGoal = currentGoal;
+  };
+
+  public getCurrentGoal = () => {
+    return this.currentGoal;
+  };
+
   public getId = () => {
     return this.id;
   };

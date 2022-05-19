@@ -1,3 +1,4 @@
+import { Collision } from "../utils/collision";
 import { Point } from "../utils/coordinates";
 import { CircleObstacle, PolygonObstacle } from "./obstacles";
 import { GOAL_COLOR } from "./settings";
@@ -54,5 +55,19 @@ export class Goal {
 
   public getRobotId = () => {
     return this.robotId;
+  };
+
+  public checkForCollisionWithRobot = (robot: CircleObstacle) => {
+    if (this.shape == GoalShape.CIRCLE) {
+      return Collision.circleCircleIntersect(
+        this.obstacle as CircleObstacle,
+        robot
+      );
+    } else {
+      return Collision.circlePolygonIntersect(
+        this.obstacle as PolygonObstacle,
+        robot
+      );
+    }
   };
 }
