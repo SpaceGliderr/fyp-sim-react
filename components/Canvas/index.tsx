@@ -4,6 +4,7 @@ import { CanvasHelper } from "../../utils/canvas";
 import { Simulator } from "../../game";
 import { MAP_1 } from "../../maps/map_1";
 import { Map } from "../../game/map";
+import { SENSOR_TICKS_PER_UPDATE, TICKS_PER_UPDATE } from "../../game/settings";
 
 const Canvas = (props: CanvasProp) => {
   // Declare selected map
@@ -45,44 +46,39 @@ const Canvas = (props: CanvasProp) => {
   }, []);
 
   // ========================= COMPONENT RENDERING =========================
-  // This useEffect hook will act as the game play loop
+  // This useEffect hook will act as the refresh loop for moving objects on the dynamic canvas
   useEffect(() => {
-    // Clear the dynamic canvas before rendering the new frame
-    CanvasHelper.clearContext();
+    const robots = simulator.getRobots();
 
-    // Apply sensor readings
-    simulator.readRobotSensors();
+    // Set the ticker here
+    const ticker = setInterval(() => {
+      // Clear the dynamic canvas before rendering the new frame
+      CanvasHelper.clearContext();
 
-    // Initialize robots
-    simulator.renderRobots();
+      // Apply sensor readings
+      // simulator.readRobotSensors();
 
-    // Check for collisions
-    simulator.checkForCollisions();
+      // Initialize robots
+      simulator.renderRobots();
 
-    // Learning Separate Axis Theorem
-    // const polygon1 = new PolygonObstacle(
-    //   [
-    //     new Point(600, 0),
-    //     new Point(640, 0),
-    //     new Point(640, 400),
-    //     new Point(600, 400),
-    //   ],
-    //   "red"
-    // );
+      // Check for collisions
+      simulator.checkForCollisions();
 
-    // polygon1.render();
+      robots[0].drive(0.5, 4, 0);
+    }, TICKS_PER_UPDATE);
 
-    // const polygon2 = new CircleObstacle(
-    //   new Point(610, 420),
-    //   Robot.RADIUS,
-    //   "blue",
-    // );
+    // Unmount ticker
+    return () => clearInterval(ticker);
+  }, [simulator]);
 
-    // polygon2.render();
+  // This useEffect hook will act as the sensor reading loop for the robots
+  useEffect(() => {
+    const ticker = setInterval(() => {
+      // Apply sensor readings every 20ms
+      simulator.readRobotSensors();
+    }, SENSOR_TICKS_PER_UPDATE);
 
-    // if (Collision.circlePolygonIntersect(polygon1, polygon2)) {
-    //   console.log("Collision detected");
-    // }
+    return () => clearInterval(ticker);
   }, [simulator]);
 
   return (
