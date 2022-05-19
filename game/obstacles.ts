@@ -46,8 +46,8 @@ export class CircleObstacle extends Obstacle {
     this.radius = radius;
   }
 
-  public render = () => {
-    CanvasHelper.drawArc(this.point, this.radius, this.getColor());
+  public render = (isStatic: boolean = false) => {
+    CanvasHelper.drawArc(this.point, this.radius, this.getColor(), isStatic);
   };
 
   public getRadius = () => {
