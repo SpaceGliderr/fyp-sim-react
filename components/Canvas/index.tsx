@@ -65,6 +65,8 @@ const Canvas = (props: CanvasProp) => {
       simulator.checkForCollisions();
 
       robots[0].drive(0.5, 4, 0);
+      robots[1].drive(0.5, 0, 4);
+      robots[2].drive(0.5, 4, 0);
     }, TICKS_PER_UPDATE);
 
     // Unmount ticker
