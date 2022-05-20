@@ -57,6 +57,10 @@ export class Goal {
     return this.robotId;
   };
 
+  public getObstacle = () => {
+    return this.obstacle;
+  };
+
   public checkForCollisionWithRobot = (robot: CircleObstacle) => {
     if (this.shape == GoalShape.CIRCLE) {
       return Collision.circleCircleIntersect(
