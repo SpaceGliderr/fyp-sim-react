@@ -1,7 +1,8 @@
 import { CanvasHelper } from "../utils/canvas";
 import { Line, Pose, Vector } from "../utils/coordinates";
 import { MathHelper } from "../utils/math";
-import { PolygonObstacle } from "./obstacles";
+import { Goal } from "./goal";
+import { CircleObstacle, PolygonObstacle } from "./obstacles";
 import { IRSensor, USSensor } from "./sensor";
 import {
   IR_SENSOR_LOCS,
@@ -12,13 +13,13 @@ import {
   US_SENSOR_LOCS,
 } from "./settings";
 
-enum RobotStatus {
+export enum RobotStatus {
   IDLE = "IDLE", // When the robot is not doing anything
   PROCESSING = "PROCESSING", // When the robot is processing data
   TRANSIT = "TRANSIT", // When the robot is moving from point A to point B
 }
 
-export class Robot {
+export class Robot extends CircleObstacle {
   public static readonly RADIUS = ROBOT_RADIUS * PIXEL_TO_CM_RATIO;
   public static readonly COLOR = ROBOT_COLOR;
   public static readonly HEADING_COLOR = ROBOT_HEADING_COLOR;
@@ -26,8 +27,12 @@ export class Robot {
   private irSensors: IRSensor[];
   private usSensors: USSensor[];
   private status: RobotStatus = RobotStatus.IDLE;
+  private currentGoal: Goal | undefined = undefined; // A robot's current goal can be undefined
+  private activityHistory: Goal[] = [];
+  private id: number;
 
-  constructor(vector: Vector) {
+  constructor(vector: Vector, id: number, goal?: Goal) {
+    super(vector, ROBOT_RADIUS);
     this.pose = new Pose(vector, MathHelper.degToRad(Math.random() * 360)); // Spawn heading is random
     this.irSensors = IR_SENSOR_LOCS.map((loc) => {
       return new IRSensor(
@@ -39,6 +44,8 @@ export class Robot {
         new Pose(vector, MathHelper.degToRad(loc) + this.pose.getTheta())
       );
     });
+    this.currentGoal = goal;
+    this.id = id;
   }
 
   public setStatus = (status: RobotStatus) => {
@@ -103,6 +110,11 @@ export class Robot {
     this.usSensors.forEach((sensor) => {
       sensor.render();
     });
+
+    // Render robot goal
+    if (this.currentGoal) {
+      this.currentGoal.render();
+    }
   };
 
   public updateSensors = (obstacles: PolygonObstacle[]) => {
@@ -134,5 +146,35 @@ export class Robot {
     const newTheta = this.pose.getTheta() + (dRightWheel - dLeftWheel) / 1;
 
     this.setPose(new Pose(new Vector(newX, newY), newTheta));
+  };
+
+  private goalReached = () => {
+    if (this.currentGoal) {
+      this.currentGoal.setStatusToReached();
+
+      this.activityHistory.push(this.currentGoal);
+
+      this.currentGoal = undefined;
+    }
+  };
+
+  public checkGoal = () => {
+    if (this.currentGoal && this.currentGoal.checkForCollisionWithRobot(this)) {
+      this.goalReached();
+      return this.id;
+    }
+    return null;
+  };
+
+  public setCurrentGoal = (currentGoal: Goal) => {
+    this.currentGoal = currentGoal;
+  };
+
+  public getCurrentGoal = () => {
+    return this.currentGoal;
+  };
+
+  public getId = () => {
+    return this.id;
   };
 }

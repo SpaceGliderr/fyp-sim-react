@@ -1,4 +1,5 @@
 import { Point } from "../utils/coordinates";
+import { Goal } from "./goal";
 import { DynamicObstacle, PolygonObstacle } from "./obstacles";
 
 export type MapTemplate = {
@@ -8,6 +9,7 @@ export type MapTemplate = {
   robotStartPositions: Point[]; // Starting positions for the robots, must be same length as robotCount variable
   staticObstacles: PolygonObstacle[];
   dynamicObstacles?: DynamicObstacle[]; // A map may or may not have dynamic obstacles
+  goals?: Goal[]; // A map may or may not have goals
 };
 
 export class Map {
@@ -17,6 +19,7 @@ export class Map {
   private robotStartPositions: Point[];
   private width: number;
   private height: number;
+  private goals?: Goal[];
 
   constructor(map: MapTemplate) {
     this.robotCount = map.robotCount;
@@ -24,6 +27,7 @@ export class Map {
     this.staticObstacles = map.staticObstacles;
     this.width = map.width;
     this.height = map.height;
+    this.goals = map.goals;
   }
 
   public unpack = () => {
@@ -34,6 +38,7 @@ export class Map {
       dynamicObstacles: this.dynamicObstacles,
       width: this.width,
       height: this.height,
+      goals: this.goals,
     };
   };
 }

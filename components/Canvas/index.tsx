@@ -1,10 +1,17 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CanvasProp } from "./props";
 import { CanvasHelper } from "../../utils/canvas";
 import { Simulator } from "../../game";
 import { MAP_1 } from "../../maps/map_1";
 import { Map } from "../../game/map";
-import { SENSOR_TICKS_PER_UPDATE, TICKS_PER_UPDATE } from "../../game/settings";
+import {
+  GOAL_SPAWN_RATE,
+  SENSOR_TICKS_PER_UPDATE,
+  TICKS_PER_UPDATE,
+} from "../../game/settings";
+import { Goal, GoalShape } from "../../game/goal";
+import { SpawnerWorkerResponse } from "../../typings/spawner-worker";
+import { Point } from "../../utils/coordinates";
 
 const Canvas = (props: CanvasProp) => {
   // Declare selected map
@@ -13,6 +20,9 @@ const Canvas = (props: CanvasProp) => {
 
   // Instantiate the simulator class based on the chosen map
   const simulator = useMemo(() => new Simulator(map), [map]);
+  const [spawnerWorker, setSpawnerWorker] = useState<Worker | undefined>(
+    undefined
+  );
 
   // ========================= ENVIRONMENT RENDERING =========================
   // Declare canvas references
@@ -64,7 +74,12 @@ const Canvas = (props: CanvasProp) => {
       // Check for collisions
       simulator.checkForCollisions();
 
+      // Check for robot goals
+      simulator.checkRobotGoals();
+
       robots[0].drive(0.5, 4, 0);
+      robots[1].drive(0.5, 0, 4);
+      robots[2].drive(0.5, 4, 0);
     }, TICKS_PER_UPDATE);
 
     // Unmount ticker
@@ -80,6 +95,41 @@ const Canvas = (props: CanvasProp) => {
 
     return () => clearInterval(ticker);
   }, [simulator]);
+
+  // ========================= SPAWNER WORKER =========================
+  useEffect(() => {
+    const ticker = setInterval(() => {
+      if (!spawnerWorker) {
+        setSpawnerWorker(
+          new Worker("./workers/spawner.js", { type: "module" })
+        );
+      } else {
+        spawnerWorker.postMessage(JSON.stringify(simulator));
+      }
+    }, GOAL_SPAWN_RATE);
+
+    return () => clearInterval(ticker);
+  }, [spawnerWorker, simulator]);
+
+  useEffect(() => {
+    if (spawnerWorker) {
+      spawnerWorker.onmessage = (event) => {
+        const { data } = event;
+
+        if (data) {
+          const generatedGoals = data.map((g: SpawnerWorkerResponse) => {
+            const { id, obstacle, point, shape: s } = g;
+            const points = point.map((p) => {
+              return new Point(p.x, p.y);
+            });
+            const shape = s === "CIRCLE" ? GoalShape.CIRCLE : GoalShape.POLYGON;
+            return new Goal(points, shape, id, obstacle.radius);
+          });
+          simulator.addGoals(generatedGoals);
+        }
+      };
+    }
+  }, [spawnerWorker, simulator]);
 
   return (
     <div>
