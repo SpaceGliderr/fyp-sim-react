@@ -1,16 +1,16 @@
-import { filter, remove } from "lodash";
+import { concat, filter, map as lodashMap, remove } from "lodash";
 import { Collision } from "../utils/collision";
-import { Point } from "../utils/coordinates";
-import { Goal, GoalShape } from "./goal";
+import { Goal } from "./goal";
 import { Map } from "./map";
 import { CircleObstacle, DynamicObstacle, PolygonObstacle } from "./obstacles";
-import { Robot, RobotStatus } from "./robot";
+import { Robot } from "./robot";
 
 export class Simulator {
   private robots: Robot[];
   private staticObstacles: PolygonObstacle[];
   private dynamicObstacles?: DynamicObstacle[]; // TODO: Make this at a later date
   private goals?: Goal[];
+  private map: Map;
 
   constructor(map: Map) {
     const { robotStartPositions, staticObstacles, dynamicObstacles, goals } =
@@ -26,7 +26,18 @@ export class Simulator {
     });
     this.staticObstacles = staticObstacles;
     this.dynamicObstacles = dynamicObstacles;
+    this.map = map;
   }
+
+  public unpack = () => {
+    return {
+      robots: this.robots,
+      staticObstacles: this.staticObstacles,
+      dynamicObstacles: this.dynamicObstacles,
+      goals: this.goals,
+      map: this.map,
+    };
+  };
 
   public getRobots = () => {
     return this.robots;
@@ -75,7 +86,11 @@ export class Simulator {
       const robotCheckGoal = robot.checkGoal();
       if (robotCheckGoal !== null && this.goals) {
         console.log("Robot reached goal");
-        remove(this.goals, robotCheckGoal);
+        this.goals = lodashMap(this.goals, (goal: Goal) => {
+          if (goal.getRobotId() !== robotCheckGoal) {
+            return goal;
+          }
+        }) as Goal[];
       }
     });
   };
@@ -86,21 +101,28 @@ export class Simulator {
     })[0];
   };
 
-  // This function is to supposed to be used by a JS worker running in intervals
-  // The choice to use JS worker is to prevent the main thread from blocking
-  public assignGoalToRobot = () => {
-    this.robots.forEach((robot) => {
-      if (
-        robot.getStatus() === RobotStatus.IDLE &&
-        robot.getCurrentGoal() === null
-      ) {
-        robot.setGoal(this.generateGoal(robot.getId()));
-      }
-    });
+  public getRobotById = (id: number) => {
+    return filter(this.robots, (robot: Robot) => {
+      return robot.getId() === id;
+    })[0];
   };
 
-  private generateGoal = (robotId: number) => {
-    // TODO: Must generate a goal where no static obstacle lies
-    return new Goal([new Point(0, 0)], GoalShape.CIRCLE, robotId, 0);
+  // This function is to supposed to be used by a JS worker running in intervals
+  // The choice to use JS worker is to prevent the main thread from blocking
+  private assignGoalToRobot = (goal: Goal) => {
+    const robot = this.getRobotById(goal.getRobotId());
+    robot.setCurrentGoal(goal);
+  };
+
+  public addGoals = (goals: Goal[]) => {
+    goals.forEach((goal) => {
+      this.assignGoalToRobot(goal);
+    });
+
+    if (goals !== undefined) {
+      this.goals = concat(this.goals, goals) as Goal[];
+    } else {
+      this.goals = goals;
+    }
   };
 }
