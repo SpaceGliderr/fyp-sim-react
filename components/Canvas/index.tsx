@@ -4,7 +4,11 @@ import { CanvasHelper } from "../../utils/canvas";
 import { Simulator } from "../../game";
 import { MAP_1 } from "../../maps/map_1";
 import { Map } from "../../game/map";
-import { SENSOR_TICKS_PER_UPDATE, TICKS_PER_UPDATE } from "../../game/settings";
+import {
+  GOAL_SPAWN_RATE,
+  SENSOR_TICKS_PER_UPDATE,
+  TICKS_PER_UPDATE,
+} from "../../game/settings";
 import { Goal, GoalShape } from "../../game/goal";
 import { SpawnerWorkerResponse } from "../../typings/spawner-worker";
 import { Point } from "../../utils/coordinates";
@@ -48,59 +52,8 @@ const Canvas = (props: CanvasProp) => {
     // Render the static obstacles
     simulator.renderStaticObstacles();
 
-    // Test whether goal spawner works
-    // generateGoalsForRobots(simulator);
-    // console.log(
-    //   "🚀 ~ file: index.tsx ~ line 48 ~ useEffect ~ generateGoalsForRobots(simulator);",
-    //   generateGoalsForRobots(simulator)
-    // );
-
-    // const spawnerWorker: Worker = new Worker("./workers/spawner.js", {
-    //   type: "module",
-    // });
-    // spawnerWorker.postMessage(JSON.stringify(simulator));
-    // console.log(JSON.stringify(simulator));
-    // console.log(JSON.parse(JSON.stringify(simulator)));
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    if (!spawnerWorker) {
-      setSpawnerWorker(new Worker("./workers/spawner.js", { type: "module" }));
-      // console.log("HUH");
-    } else {
-      // console.log("LKJBASDLKJGBALKS");
-      spawnerWorker.postMessage(JSON.stringify(simulator));
-      // console.log("qwerqwerqwerqwer");
-    }
-  }, [spawnerWorker, simulator]);
-
-  useEffect(() => {
-    if (spawnerWorker) {
-      spawnerWorker.onmessage = (event) => {
-        const { data } = event;
-
-        if (data) {
-          const generatedGoals = data.map((g: SpawnerWorkerResponse) => {
-            const { id, obstacle, point, shape: s } = g;
-            const points = point.map((p) => {
-              return new Point(p.x, p.y);
-            });
-            const shape = s === "CIRCLE" ? GoalShape.CIRCLE : GoalShape.POLYGON;
-            return new Goal(points, shape, id, obstacle.radius);
-          });
-          console.log(
-            "🚀 ~ file: index.tsx ~ line 94 ~ generatedGoals ~ generatedGoals",
-            generatedGoals
-          );
-          simulator.addGoals(generatedGoals);
-        }
-        console.log(simulator);
-        // console.log(data);
-      };
-    }
-  }, [spawnerWorker, simulator]);
 
   // ========================= COMPONENT RENDERING =========================
   // This useEffect hook will act as the refresh loop for moving objects on the dynamic canvas
@@ -142,6 +95,41 @@ const Canvas = (props: CanvasProp) => {
 
     return () => clearInterval(ticker);
   }, [simulator]);
+
+  // ========================= SPAWNER WORKER =========================
+  useEffect(() => {
+    const ticker = setInterval(() => {
+      if (!spawnerWorker) {
+        setSpawnerWorker(
+          new Worker("./workers/spawner.js", { type: "module" })
+        );
+      } else {
+        spawnerWorker.postMessage(JSON.stringify(simulator));
+      }
+    }, GOAL_SPAWN_RATE);
+
+    return () => clearInterval(ticker);
+  }, [spawnerWorker, simulator]);
+
+  useEffect(() => {
+    if (spawnerWorker) {
+      spawnerWorker.onmessage = (event) => {
+        const { data } = event;
+
+        if (data) {
+          const generatedGoals = data.map((g: SpawnerWorkerResponse) => {
+            const { id, obstacle, point, shape: s } = g;
+            const points = point.map((p) => {
+              return new Point(p.x, p.y);
+            });
+            const shape = s === "CIRCLE" ? GoalShape.CIRCLE : GoalShape.POLYGON;
+            return new Goal(points, shape, id, obstacle.radius);
+          });
+          simulator.addGoals(generatedGoals);
+        }
+      };
+    }
+  }, [spawnerWorker, simulator]);
 
   return (
     <div>
