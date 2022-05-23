@@ -148,10 +148,6 @@ export class Robot extends CircleObstacle {
     this.setPose(new Pose(new Vector(newX, newY), newTheta));
   };
 
-  public setGoal = (goal: Goal) => {
-    this.currentGoal = goal;
-  };
-
   private goalReached = () => {
     if (this.currentGoal) {
       this.currentGoal.setStatusToReached();
