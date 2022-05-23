@@ -1,0 +1,7 @@
+name: fyp-backend-algorithm
+dependencies:
+  - numpy
+  - pip
+  - pip:
+      - fastapi
+      - "uvicorn[standard]"
