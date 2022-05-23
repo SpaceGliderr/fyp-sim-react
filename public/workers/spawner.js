@@ -26,10 +26,6 @@ const generateGoalsForRobots = (data) => {
       const generatedObstacle = generatedGoal.obstacle;
 
       for (let obstacle of allObstacles) {
-        console.log(
-          "🚀 ~ file: spawner.js ~ line 54 ~ robotWithNoGoals.forEach ~ obstacle",
-          obstacle
-        );
         var obstacleGoalCollision = false;
 
         if (obstacle.radius) {
