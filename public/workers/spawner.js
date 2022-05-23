@@ -12,7 +12,8 @@ const generateGoalsForRobots = (data) => {
   const goalObstacles = goals.map((goal) => {
     return goal.obstacle;
   });
-  const allObstacles = goalObstacles.concat(obstacles);
+  const allObstacles = obstacles.concat(goalObstacles);
+  allObstacles.shift();
 
   // 3. Generate a goal for each robot that has no goal
   const generatedGoals = [];
@@ -24,20 +25,42 @@ const generateGoalsForRobots = (data) => {
     while (collision) {
       const generatedObstacle = generatedGoal.obstacle;
 
-      // 4.  Check if the goal is in collision with any obstacles
-      allObstacles.forEach((obstacle) => {
-        if (obstacle.radius) {
-          collision = circleCircleIntersect(generatedObstacle, obstacle);
-        } else {
-          collision = circlePolygonIntersect(generatedObstacle, obstacle);
-        }
-      });
+      for (let obstacle of allObstacles) {
+        console.log(
+          "🚀 ~ file: spawner.js ~ line 54 ~ robotWithNoGoals.forEach ~ obstacle",
+          obstacle
+        );
+        var obstacleGoalCollision = false;
 
-      generatedGoal = generateGoal(width, height, robot);
+        if (obstacle.radius) {
+          obstacleGoalCollision = circleCircleIntersect(
+            generatedObstacle,
+            obstacle
+          );
+        } else {
+          obstacleGoalCollision = circlePolygonIntersect(
+            generatedObstacle,
+            obstacle
+          );
+        }
+
+        if (obstacleGoalCollision) {
+          collision = true;
+          break;
+        } else {
+          collision = false;
+        }
+      }
+
+      if (collision) {
+        generatedGoal = generateGoal(width, height, robot);
+      }
     }
 
     // 5. Add the goal to the list of goals
-    generatedGoals.push(generatedGoal);
+    if (!collision) {
+      generatedGoals.push(generatedGoal);
+    }
   });
 
   return generatedGoals;
