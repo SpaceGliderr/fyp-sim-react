@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 from pydantic import BaseModel
 
 
@@ -8,19 +8,19 @@ class Point(BaseModel):
 
 
 class Pose(BaseModel):
-    point: Point
+    vector: Point
     theta: float # heading
 
 
 class SensorReading(BaseModel):
-    pose: Pose
+    reading: Point
 
 
 class Robot(BaseModel):
     id: int
     pose: Pose
     sensor_readings: List[SensorReading]
-    goal: Point = None # optional, a robot can not have a goal at a given time
+    current_goal: List[Point] = None # optional, a robot can not have a goal at a given time
 
 
 class TopologicalEnvironment(BaseModel):
