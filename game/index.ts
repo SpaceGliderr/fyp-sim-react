@@ -1,4 +1,4 @@
-import { concat, filter, map as lodashMap, remove } from "lodash";
+import { concat, filter, map as lodashMap } from "lodash";
 import { Collision } from "../utils/collision";
 import { Goal } from "./goal";
 import { Map } from "./map";
@@ -124,5 +124,21 @@ export class Simulator {
     } else {
       this.goals = goals;
     }
+  };
+
+  public generatePayload = () => {
+    // Generates the API payload for the algorithm to use
+    const { width, height } = this.map.unpack();
+    const robotPayload = this.robots.map((robot) => {
+      return robot.generatePayload();
+    });
+
+    return {
+      robots: robotPayload,
+      environment: {
+        width,
+        height,
+      },
+    };
   };
 }
