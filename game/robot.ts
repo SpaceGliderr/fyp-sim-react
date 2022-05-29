@@ -6,12 +6,16 @@ import { Goal } from "./goal";
 import { CircleObstacle, PolygonObstacle } from "./obstacles";
 import { IRSensor, USSensor } from "./sensor";
 import {
+  DIFFERENCE_IN_TIME,
   IR_SENSOR_LOCS,
+  MAX_WHEEL_DRIVE_RATES,
   PIXEL_TO_CM_RATIO,
   ROBOT_COLOR,
   ROBOT_HEADING_COLOR,
   ROBOT_RADIUS,
   US_SENSOR_LOCS,
+  WHEEL_BASE_LENGTH_IN_PX,
+  WHEEL_RADIUS_IN_PX,
 } from "./settings";
 
 export enum RobotStatus {
@@ -129,13 +133,14 @@ export class Robot extends CircleObstacle {
   };
 
   // Moves using differential drive mechanics
-  public drive = (dt: number, driveRateL: number, driveRateR: number) => {
-    const dTheta = MathHelper.degToRad(dt);
+  public drive = (dL: number, dR: number) => {
+    const driveRateL = Math.min(dL, MAX_WHEEL_DRIVE_RATES);
+    const driveRateR = Math.min(dR, MAX_WHEEL_DRIVE_RATES);
 
-    const dThetaL = driveRateL * dTheta;
-    const dThetaR = driveRateR * dTheta;
+    const dThetaL = driveRateL * DIFFERENCE_IN_TIME;
+    const dThetaR = driveRateR * DIFFERENCE_IN_TIME;
 
-    const wheelMetersPerRad = 0.5;
+    const wheelMetersPerRad = WHEEL_RADIUS_IN_PX;
     const dLeftWheel = dThetaL * wheelMetersPerRad;
     const dRightWheel = dThetaR * wheelMetersPerRad;
     const dCenter = (dLeftWheel + dRightWheel) / 2;
@@ -144,7 +149,9 @@ export class Robot extends CircleObstacle {
       this.pose.getPoint().getX() + dCenter * Math.cos(this.pose.getTheta());
     const newY =
       this.pose.getPoint().getY() + dCenter * Math.sin(this.pose.getTheta());
-    const newTheta = this.pose.getTheta() + (dRightWheel - dLeftWheel) / 1;
+    const newTheta =
+      this.pose.getTheta() +
+      (dLeftWheel - dRightWheel) / WHEEL_BASE_LENGTH_IN_PX;
 
     this.setPose(new Pose(new Vector(newX, newY), newTheta));
   };
