@@ -77,9 +77,9 @@ const Canvas = (props: CanvasProp) => {
       // Check for robot goals
       simulator.checkRobotGoals();
 
-      robots[0].drive(0.5, 4, 0);
-      robots[1].drive(0.5, 0, 4);
-      robots[2].drive(0.5, 4, 0);
+      robots[0].drive(19, 0);
+      robots[1].drive(17, 18);
+      robots[2].drive(10, 0);
     }, TICKS_PER_UPDATE);
 
     // Unmount ticker
