@@ -1,3 +1,4 @@
+import { concat, map } from "lodash";
 import { CanvasHelper } from "../utils/canvas";
 import { Line, Pose, Vector } from "../utils/coordinates";
 import { MathHelper } from "../utils/math";
@@ -176,5 +177,27 @@ export class Robot extends CircleObstacle {
 
   public getId = () => {
     return this.id;
+  };
+
+  public generatePayload = () => {
+    const sensor_readings = map(
+      concat(this.irSensors, this.usSensors),
+      (sensor) => {
+        return { reading: sensor.getReading() };
+      }
+    );
+    if (this.currentGoal) {
+      return {
+        id: this.id,
+        pose: this.pose,
+        current_goal: this.currentGoal.unpack().point,
+        sensor_readings,
+      };
+    }
+    return {
+      id: this.id,
+      pose: this.pose,
+      sensor_readings,
+    };
   };
 }
