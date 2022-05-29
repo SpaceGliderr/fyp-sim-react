@@ -21,6 +21,7 @@ export abstract class Sensor {
     this.pose = pose;
     this.mLen = mLen;
     this.color = color;
+    this.reading = MathHelper.calcEndPoint(this.pose, this.mLen);
   }
 
   public setReading = (newReading: Point) => {
