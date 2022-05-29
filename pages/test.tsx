@@ -1,7 +1,18 @@
 import { NextPage } from "next";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Simulator } from "../game";
+import { Map } from "../game/map";
+import { MAP_1 } from "../maps/map_1";
 
 const Test: NextPage = () => {
+  // Declare selected map
+  const map = useMemo(() => new Map(MAP_1), []);
+
+  // Instantiate the simulator class based on the chosen map
+  const simulator = useMemo(() => new Simulator(map), [map]);
+
+  // console.log(JSON.stringify(simulator.generatePayload()));
+
   const [res, setRes] = useState<string>("Default");
 
   const executeAlgorithm = async () => {
@@ -11,60 +22,10 @@ const Test: NextPage = () => {
         "Access-Control-Allow-Origin": "*",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        robots: [
-          {
-            id: 1,
-            pose: {
-              point: {
-                x: 0,
-                y: 0,
-              },
-              theta: 0,
-            },
-            sensor_readings: [
-              {
-                pose: {
-                  point: {
-                    x: 0,
-                    y: 0,
-                  },
-                  theta: 0,
-                },
-              },
-              {
-                pose: {
-                  point: {
-                    x: 0,
-                    y: 0,
-                  },
-                  theta: 0,
-                },
-              },
-              {
-                pose: {
-                  point: {
-                    x: 0,
-                    y: 0,
-                  },
-                  theta: 0,
-                },
-              },
-            ],
-            goal: {
-              x: 0,
-              y: 0,
-            },
-          },
-        ],
-        environment: {
-          width: 1400,
-          height: 800,
-        },
-      }),
+      body: JSON.stringify(simulator.generatePayload()),
     });
     const data = await response.json();
-    // console.log("🚀 ~ file: test.tsx ~ line 6 ~ executeAlgorithm ~ data", data);
+    console.log("🚀 ~ file: test.tsx ~ line 6 ~ executeAlgorithm ~ data", data);
     setRes(data);
   };
 
