@@ -1,4 +1,4 @@
-import { concat, map } from "lodash";
+import { concat, filter, indexOf, isEmpty, map, min } from "lodash";
 import { CanvasHelper } from "../utils/canvas";
 import { Line, Pose, Vector } from "../utils/coordinates";
 import { MathHelper } from "../utils/math";
@@ -24,6 +24,24 @@ export enum RobotStatus {
   TRANSIT = "TRANSIT", // When the robot is moving from point A to point B
 }
 
+export type RobotPIDMetadata = {
+  prev_eP: number;
+  prev_eI: number;
+};
+
+export interface ExecutionPayload {}
+
+export type AlgorithmPayload = {
+  robot_id: number;
+  type: number;
+  payload: ExecutionPayload;
+};
+
+export interface GoToGoalPayload extends ExecutionPayload {
+  steering_input: [number, number];
+  pid_metadata: RobotPIDMetadata;
+}
+
 export class Robot extends CircleObstacle {
   public static readonly RADIUS = ROBOT_RADIUS * PIXEL_TO_CM_RATIO;
   public static readonly COLOR = ROBOT_COLOR;
@@ -35,6 +53,10 @@ export class Robot extends CircleObstacle {
   private currentGoal: Goal | undefined = undefined; // A robot's current goal can be undefined
   private activityHistory: Goal[] = [];
   private id: number;
+  private pidMetadata = {
+    prev_eP: 0,
+    prev_eI: 0,
+  };
 
   constructor(vector: Vector, id: number, goal?: Goal) {
     super(vector, ROBOT_RADIUS);
@@ -52,6 +74,10 @@ export class Robot extends CircleObstacle {
     this.currentGoal = goal;
     this.id = id;
   }
+
+  public setPIDMetadata = (metadata: RobotPIDMetadata) => {
+    this.pidMetadata = metadata;
+  };
 
   public setStatus = (status: RobotStatus) => {
     this.status = status;
@@ -182,29 +208,65 @@ export class Robot extends CircleObstacle {
     return this.currentGoal;
   };
 
+  public getClosestGoalPoint = () => {
+    if (this.currentGoal) {
+      const distances = this.currentGoal.getPoints().map((point) => {
+        return this.pose.getPoint().distanceTo(point);
+      });
+      return this.currentGoal.getPoints()[indexOf(distances, min(distances))];
+    }
+    return undefined;
+  };
+
   public getId = () => {
     return this.id;
   };
 
   public generatePayload = () => {
-    const sensor_readings = map(
-      concat(this.irSensors, this.usSensors),
-      (sensor) => {
+    const sensor_readings = filter(
+      map(concat(this.irSensors, this.usSensors), (sensor) => {
         return { reading: sensor.getReading() };
-      }
+      }),
+      isEmpty
     );
-    if (this.currentGoal) {
+    const closestGoalPoint = this.getClosestGoalPoint();
+    if (closestGoalPoint) {
       return {
         id: this.id,
         pose: this.pose,
-        current_goal: this.currentGoal.unpack().point,
+        current_goal: closestGoalPoint,
         sensor_readings,
+        pid_metadata: this.pidMetadata,
       };
     }
     return {
       id: this.id,
       pose: this.pose,
       sensor_readings,
+      pid_metadata: this.pidMetadata,
     };
+  };
+
+  public execute = (algorithmPayload: AlgorithmPayload) => {
+    const { type, payload } = algorithmPayload;
+
+    if (payload === null) return;
+
+    switch (type) {
+      case 1: // Go To Goal behavior
+        const { steering_input, pid_metadata } = payload as GoToGoalPayload;
+        this.drive(steering_input[0], steering_input[1]);
+        this.setPIDMetadata(pid_metadata);
+        break;
+
+      case 2: // Follow wall behavior
+        break;
+
+      case 3: // Avoid obstacle behavior
+        break;
+
+      default:
+        break;
+    }
   };
 }

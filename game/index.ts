@@ -3,7 +3,7 @@ import { Collision } from "../utils/collision";
 import { Goal } from "./goal";
 import { Map } from "./map";
 import { CircleObstacle, DynamicObstacle, PolygonObstacle } from "./obstacles";
-import { Robot } from "./robot";
+import { AlgorithmPayload, Robot } from "./robot";
 
 export class Simulator {
   private robots: Robot[];
@@ -140,5 +140,13 @@ export class Simulator {
         height,
       },
     };
+  };
+
+  public execute = (payload: AlgorithmPayload[]) => {
+    // Execute the algorithm payloads
+    payload.forEach((p) => {
+      const robot = this.getRobotById(p.robot_id);
+      robot.execute(p);
+    });
   };
 }

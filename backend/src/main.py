@@ -1,8 +1,10 @@
-from typing import List, Union
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from algorithm.algorithm import BaseAlgorithm
+from algorithm.arbiter import Arbiter
+from src.api_models import _Robot
 
-from src.models import Algorithm
+from src.api_models import _Algorithm
 
 
 app = FastAPI()
@@ -28,7 +30,16 @@ def read_root():
 
 
 @app.post("/algorithm/")
-def algorithm(algorithm: Algorithm):
+def algorithm(algorithm: _Algorithm):
     print("Robots \n", algorithm.robots)
     print("Environment \n", algorithm.environment)
-    return "Test API Successful"
+    base_algorithm = BaseAlgorithm(algorithm)
+    print(base_algorithm.makeDecisions())
+    decisions = base_algorithm.makeDecisions()
+    return decisions
+
+@app.post("/single_robot/")
+def single_robot(robot: _Robot):
+    print("Robot \n", robot)
+    decision = Arbiter(robot)
+    return decision

@@ -26,7 +26,7 @@ const Test: NextPage = () => {
     });
     const data = await response.json();
     console.log("🚀 ~ file: test.tsx ~ line 6 ~ executeAlgorithm ~ data", data);
-    setRes(data);
+    // setRes(data);
   };
 
   return (
