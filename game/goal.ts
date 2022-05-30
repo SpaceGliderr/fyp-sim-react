@@ -49,6 +49,10 @@ export class Goal {
     };
   };
 
+  public getPoints = () => {
+    return this.point;
+  };
+
   public setStatusToReached = () => {
     this.status = GoalStatus.REACHED;
   };
