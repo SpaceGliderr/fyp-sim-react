@@ -12,6 +12,7 @@ import {
 import { Goal, GoalShape } from "../../game/goal";
 import { SpawnerWorkerResponse } from "../../typings/spawner-worker";
 import { Point } from "../../utils/coordinates";
+import { executeBatchAlgorithm } from "../../public/api/algorithm";
 
 const Canvas = (props: CanvasProp) => {
   // Declare selected map
@@ -58,8 +59,6 @@ const Canvas = (props: CanvasProp) => {
   // ========================= COMPONENT RENDERING =========================
   // This useEffect hook will act as the refresh loop for moving objects on the dynamic canvas
   useEffect(() => {
-    const robots = simulator.getRobots();
-
     // Set the ticker here
     const ticker = setInterval(() => {
       // Clear the dynamic canvas before rendering the new frame
@@ -77,9 +76,9 @@ const Canvas = (props: CanvasProp) => {
       // Check for robot goals
       simulator.checkRobotGoals();
 
-      robots[0].drive(19, 0);
-      robots[1].drive(17, 18);
-      robots[2].drive(10, 0);
+      const response = executeBatchAlgorithm(simulator.generatePayload());
+
+      response.then((res) => simulator.execute(res));
     }, TICKS_PER_UPDATE);
 
     // Unmount ticker
