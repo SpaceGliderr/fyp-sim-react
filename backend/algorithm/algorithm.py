@@ -4,12 +4,17 @@ from src.api_models import _Algorithm
 
 class BaseAlgorithm:
     def __init__(self, algorithm: _Algorithm) -> None:
-        robots = algorithm.robots
+        self.robots = []
+        for robot in algorithm.robots:
+            self.robots.append(robot)
+        # robots = algorithm.robots
+        
+    def makeDecisions(self):
         decisions = []
 
         # Pass the robot into the arbiter class to make the decision for the robot.
-        for robot in robots:
+        for robot in self.robots:
             arbiter = Arbiter(robot)
             decisions.append(arbiter.decide())
 
-        pass
+        return decisions

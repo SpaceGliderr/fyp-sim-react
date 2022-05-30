@@ -1,4 +1,5 @@
 from algorithm.controllers.navigation.go_to_goal import GoToGoal
+from src.api_models import _PayloadTypes
 from models.robot import Robot
 from src.utils import transform_robot_api_model
 from src.api_models import _Robot
@@ -12,10 +13,21 @@ class Arbiter:
         pass
 
     def decide(self) -> None:
+        payload = {
+            'robot_id': self.robot.id,
+            'type': None,
+            'payload': None,
+        }
+
         if self.robot.current_goal is not None:
+            payload['type'] = _PayloadTypes.gtg
             # If the robot has a goal, then move towards the goal.
             controller = GoToGoal(self.robot.pose, self.robot.current_goal, self.robot.pid_metadata)
-            decision = controller.calculate_steering_inputs()
-            print(decision)
-            return decision
-        pass
+            steering_input, pid_metadata = controller.calculate_steering_inputs()
+
+            payload['payload'] = {
+                'steering_input': steering_input,
+                'pid_metadata': pid_metadata,
+            }
+
+        return payload
