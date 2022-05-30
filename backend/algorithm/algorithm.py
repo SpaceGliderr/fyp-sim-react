@@ -1,9 +1,9 @@
-from backend.algorithm.arbiter import Arbiter
-from backend.src.models import Algorithm
+from algorithm.arbiter import Arbiter
+from src.api_models import _Algorithm
 
 
-class Algorithm:
-    def __init__(self, algorithm: Algorithm) -> None:
+class BaseAlgorithm:
+    def __init__(self, algorithm: _Algorithm) -> None:
         robots = algorithm.robots
         decisions = []
 
