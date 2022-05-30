@@ -259,6 +259,12 @@ export class Robot extends CircleObstacle {
         this.setPIDMetadata(pid_metadata);
         break;
 
+      case 2: // Follow wall behavior
+        break;
+
+      case 3: // Avoid obstacle behavior
+        break;
+
       default:
         break;
     }
