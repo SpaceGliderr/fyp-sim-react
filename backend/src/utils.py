@@ -18,10 +18,10 @@ def uni_to_diff(velocity, omega):
     
     # Not sure whether we allow the robot wheel to reverse, therefore, any negative drive rates will be set to 0.
     # TODO: Might have to remove this restriction, don't know what effects it has on the error terms in the calculation of steering inputs.
-    if (velocityL < 0):
-        velocityL = 0
-    if (velocityR < 0):
-        velocityR = 0
+    # if (velocityL < 0):
+    #     velocityL = 0
+    # if (velocityR < 0):
+    #     velocityR = 0
 
     return velocityL, velocityR
 
