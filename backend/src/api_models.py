@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import List
 from pydantic import BaseModel
 
@@ -37,3 +38,9 @@ class _TopologicalEnvironment(BaseModel):
 class _Algorithm(BaseModel):
     robots: List[_Robot]
     environment: _TopologicalEnvironment
+
+
+class _PayloadTypes(Enum):
+    gtg = 1 # Go To Goal payload type.
+    fw = 2 # Follow Wall payload type.
+    ao = 3 # Avoid Obstacle payload type.
