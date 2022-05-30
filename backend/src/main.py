@@ -1,8 +1,8 @@
-from typing import List, Union
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from algorithm.algorithm import BaseAlgorithm
 
-from src.models import Algorithm
+from src.api_models import _Algorithm
 
 
 app = FastAPI()
@@ -28,7 +28,8 @@ def read_root():
 
 
 @app.post("/algorithm/")
-def algorithm(algorithm: Algorithm):
+def algorithm(algorithm: _Algorithm):
     print("Robots \n", algorithm.robots)
     print("Environment \n", algorithm.environment)
+    decider = BaseAlgorithm(algorithm)
     return "Test API Successful"
