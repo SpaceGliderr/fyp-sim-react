@@ -1,4 +1,4 @@
-import { concat, indexOf, map, min } from "lodash";
+import { concat, filter, indexOf, isEmpty, map, min } from "lodash";
 import { CanvasHelper } from "../utils/canvas";
 import { Line, Pose, Vector } from "../utils/coordinates";
 import { MathHelper } from "../utils/math";
@@ -28,6 +28,19 @@ export type RobotPIDMetadata = {
   prev_eP: number;
   prev_eI: number;
 };
+
+export interface ExecutionPayload {}
+
+export type AlgorithmPayload = {
+  robot_id: number;
+  type: number;
+  payload: ExecutionPayload;
+};
+
+export interface GoToGoalPayload extends ExecutionPayload {
+  steering_input: [number, number];
+  pid_metadata: RobotPIDMetadata;
+}
 
 export class Robot extends CircleObstacle {
   public static readonly RADIUS = ROBOT_RADIUS * PIXEL_TO_CM_RATIO;
@@ -210,11 +223,11 @@ export class Robot extends CircleObstacle {
   };
 
   public generatePayload = () => {
-    const sensor_readings = map(
-      concat(this.irSensors, this.usSensors),
-      (sensor) => {
+    const sensor_readings = filter(
+      map(concat(this.irSensors, this.usSensors), (sensor) => {
         return { reading: sensor.getReading() };
-      }
+      }),
+      isEmpty
     );
     const closestGoalPoint = this.getClosestGoalPoint();
     if (closestGoalPoint) {
@@ -232,5 +245,22 @@ export class Robot extends CircleObstacle {
       sensor_readings,
       pid_metadata: this.pidMetadata,
     };
+  };
+
+  public execute = (algorithmPayload: AlgorithmPayload) => {
+    const { type, payload } = algorithmPayload;
+
+    if (payload === null) return;
+
+    switch (type) {
+      case 1: // Go To Goal behavior
+        const { steering_input, pid_metadata } = payload as GoToGoalPayload;
+        this.drive(steering_input[0], steering_input[1]);
+        this.setPIDMetadata(pid_metadata);
+        break;
+
+      default:
+        break;
+    }
   };
 }
