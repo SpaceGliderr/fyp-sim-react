@@ -1,3 +1,4 @@
+import combinations from "combinations";
 import { concat, filter, map as lodashMap } from "lodash";
 import { Collision } from "../utils/collision";
 import { Goal } from "./goal";
@@ -147,6 +148,25 @@ export class Simulator {
     payload.forEach((p) => {
       const robot = this.getRobotById(p.robot_id);
       robot.execute(p);
+    });
+  };
+
+  public searchForSignalOverlaps = () => {
+    // Clear signal overlaps
+    this.robots.forEach((robot) => {
+      robot.clearRobotsWithinSignalRange();
+    });
+
+    // Search for signal overlaps
+    const indices = Array.from(Array(this.robots.length).keys());
+    const combinationOfIndices = combinations(indices, 2, 2);
+    combinationOfIndices.forEach(([first, second]) => {
+      const firstRobot = this.robots[first];
+      const secondRobot = this.robots[second];
+      if (firstRobot.getSignal().isSignalWithinRange(secondRobot.getSignal())) {
+        firstRobot.addRobotIdToSignalRange(secondRobot.getId());
+        secondRobot.addRobotIdToSignalRange(firstRobot.getId());
+      }
     });
   };
 }
