@@ -54,6 +54,10 @@ export class CircleObstacle extends Obstacle {
     return this.radius;
   };
 
+  public setPoint = (point: Point) => {
+    this.point = point;
+  };
+
   public getPoint = () => {
     return this.point;
   };
