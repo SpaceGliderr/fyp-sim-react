@@ -1,4 +1,5 @@
-from math import cos, sin
+import json
+from posixpath import dirname
 from src.api_models import _Robot
 from models.point import Point
 from models.pose import Pose
@@ -34,3 +35,15 @@ def transform_robot_api_model(robot: _Robot):
     else:
         current_goal = None
     return robot.id, pose, robot.sensor_readings, current_goal, robot.pid_metadata
+
+
+def clear_map_json():    
+    # Load map_template.json file
+    template_file = open("./algorithm/controllers/mapping/template_map.json")
+    template = json.load(template_file)
+
+    # Replace map.json file with template data
+    with open('./algorithm/controllers/mapping/map.json', 'w') as map_file:
+        map_file.write(json.dumps(template))
+
+    template_file.close()

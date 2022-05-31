@@ -3,8 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from algorithm.algorithm import BaseAlgorithm
 from algorithm.arbiter import Arbiter
 from src.api_models import _Robot
-
 from src.api_models import _Algorithm
+
+import src.utils as utils
 
 
 app = FastAPI()
@@ -43,3 +44,13 @@ def single_robot(robot: _Robot):
     print("Robot \n", robot)
     decision = Arbiter(robot)
     return decision
+
+
+@app.post("/clear_map_json/")
+def clear_map_json():
+    try:
+        utils.clear_map_json()
+    except Exception as e:
+        print(e)
+        return str(e)
+    return "successfully cleared map json"
