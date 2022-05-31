@@ -20,3 +20,14 @@ export const executeSingleRobot = async (payload: object) => {
   });
   return await response.json();
 };
+
+export const executeClearMapJSON = async () => {
+  const response = await fetch(`${process.env.API_URL}/clear_map_json/`, {
+    method: "POST",
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Content-Type": "application/json",
+    },
+  });
+  return await response.json();
+};
