@@ -13,10 +13,13 @@ import {
   ROBOT_COLOR,
   ROBOT_HEADING_COLOR,
   ROBOT_RADIUS,
+  SIGNAL_CIRCLE_COLOR_RGB,
+  SIGNAL_CIRCLE_OPACITY,
   US_SENSOR_LOCS,
   WHEEL_BASE_LENGTH_IN_PX,
   WHEEL_RADIUS_IN_PX,
 } from "./settings";
+import { Signal } from "./signal";
 
 export enum RobotStatus {
   IDLE = "IDLE", // When the robot is not doing anything
@@ -57,9 +60,11 @@ export class Robot extends CircleObstacle {
     prev_eP: 0,
     prev_eI: 0,
   };
+  private signal: Signal;
+  private robotsWithinSignalRange: number[] = [];
 
   constructor(vector: Vector, id: number, goal?: Goal) {
-    super(vector, ROBOT_RADIUS);
+    super(vector, Robot.RADIUS);
     this.pose = new Pose(vector, MathHelper.degToRad(Math.random() * 360)); // Spawn heading is random
     this.irSensors = IR_SENSOR_LOCS.map((loc) => {
       return new IRSensor(
@@ -73,6 +78,7 @@ export class Robot extends CircleObstacle {
     });
     this.currentGoal = goal;
     this.id = id;
+    this.signal = new Signal(vector);
   }
 
   public setPIDMetadata = (metadata: RobotPIDMetadata) => {
@@ -89,6 +95,12 @@ export class Robot extends CircleObstacle {
 
   public setPose = (pose: Pose) => {
     this.pose = pose;
+
+    const point = this.pose.getPoint();
+
+    // Update CircleObstacle position
+    this.setPoint(point);
+    this.signal.setPoint(point);
 
     // Update sensor bearings based on the new pose
     this.irSensors = IR_SENSOR_LOCS.map((loc) => {
@@ -146,6 +158,13 @@ export class Robot extends CircleObstacle {
     if (this.currentGoal) {
       this.currentGoal.render();
     }
+
+    // Render robot signal radius
+    CanvasHelper.drawArc(
+      this.signal.getPoint(),
+      this.signal.getRadius(),
+      `rgba(${SIGNAL_CIRCLE_COLOR_RGB[0]}, ${SIGNAL_CIRCLE_COLOR_RGB[1]}, ${SIGNAL_CIRCLE_COLOR_RGB[2]}, ${SIGNAL_CIRCLE_OPACITY})`
+    );
   };
 
   public updateSensors = (obstacles: PolygonObstacle[]) => {
@@ -237,6 +256,7 @@ export class Robot extends CircleObstacle {
         current_goal: closestGoalPoint,
         sensor_readings,
         pid_metadata: this.pidMetadata,
+        robots_within_signal_range: this.robotsWithinSignalRange,
       };
     }
     return {
@@ -244,6 +264,7 @@ export class Robot extends CircleObstacle {
       pose: this.pose,
       sensor_readings,
       pid_metadata: this.pidMetadata,
+      robots_within_signal_range: this.robotsWithinSignalRange,
     };
   };
 
@@ -268,5 +289,21 @@ export class Robot extends CircleObstacle {
       default:
         break;
     }
+  };
+
+  public getSignal = () => {
+    return this.signal;
+  };
+
+  public addRobotIdToSignalRange = (robotId: number) => {
+    this.robotsWithinSignalRange.push(robotId);
+  };
+
+  public clearRobotsWithinSignalRange = () => {
+    this.robotsWithinSignalRange = [];
+  };
+
+  public getRobotsWithinSignalRange = () => {
+    return this.robotsWithinSignalRange;
   };
 }

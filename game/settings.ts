@@ -34,13 +34,21 @@ export const GOAL_SPAWN_RATE = 5000; // in milliseconds (5 seconds)
 
 export const WHEEL_RADIUS_IN_CM = 2.1; // in Cm (diameter is 42 mm)
 
-export const WHEEL_RADIUS_IN_PX = WHEEL_RADIUS_IN_CM / PIXEL_TO_CM_RATIO;
+export const WHEEL_RADIUS_IN_PX = WHEEL_RADIUS_IN_CM * PIXEL_TO_CM_RATIO;
 
 export const WHEEL_BASE_LENGTH_IN_CM = 8.85;
 
 export const WHEEL_BASE_LENGTH_IN_PX =
-  WHEEL_BASE_LENGTH_IN_CM / PIXEL_TO_CM_RATIO;
+  WHEEL_BASE_LENGTH_IN_CM * PIXEL_TO_CM_RATIO;
 
 export const DIFFERENCE_IN_TIME = UPDATES_PER_SECOND / 1000;
 
 export const MAX_WHEEL_DRIVE_RATES = 18; // in rad/s
+
+export const SIGNAL_RADIUS_IN_CM = 100; // in cm
+
+export const SIGNAL_RADIUS_IN_PX = SIGNAL_RADIUS_IN_CM * PIXEL_TO_CM_RATIO;
+
+export const SIGNAL_CIRCLE_COLOR_RGB = [247, 185, 156];
+
+export const SIGNAL_CIRCLE_OPACITY = 0.2;
