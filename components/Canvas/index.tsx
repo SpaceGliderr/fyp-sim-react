@@ -79,6 +79,7 @@ const Canvas = (props: CanvasProp) => {
       simulator.checkRobotGoals();
 
       // Execute algorithm
+      // TODO: Uncomment once it is debugged
       // const response = executeBatchAlgorithm(simulator.generatePayload());
 
       // response.then((res) => simulator.execute(res));
