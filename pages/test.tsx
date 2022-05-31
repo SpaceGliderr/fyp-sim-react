@@ -15,14 +15,27 @@ const Test: NextPage = () => {
 
   const [res, setRes] = useState<string>("Default");
 
+  // const executeAlgorithm = async () => {
+  //   const response = await fetch(`${process.env.API_URL}/algorithm/`, {
+  //     method: "POST",
+  //     headers: {
+  //       "Access-Control-Allow-Origin": "*",
+  //       "Content-Type": "application/json",
+  //     },
+  //     body: JSON.stringify(simulator.generatePayload()),
+  //   });
+  //   const data = await response.json();
+  //   console.log("🚀 ~ file: test.tsx ~ line 6 ~ executeAlgorithm ~ data", data);
+  //   // setRes(data);
+  // };
+
   const executeAlgorithm = async () => {
-    const response = await fetch(`${process.env.API_URL}/algorithm/`, {
+    const response = await fetch(`${process.env.API_URL}/clear_map_json/`, {
       method: "POST",
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(simulator.generatePayload()),
     });
     const data = await response.json();
     console.log("🚀 ~ file: test.tsx ~ line 6 ~ executeAlgorithm ~ data", data);
