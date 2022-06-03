@@ -176,4 +176,25 @@ export const MAP_3: MapTemplate = {
       STATIC_OBSTACLE_COLOR
     ),
   ],
+  regions: [
+    [
+      new Point(0, 0),
+      new Point(1120, 0),
+      new Point(1120, 300),
+      new Point(0, 300),
+    ],
+    [
+      new Point(0, 300),
+      new Point(590, 300),
+      new Point(590, 760),
+      new Point(0, 760),
+    ],
+    [
+      new Point(590, 300),
+      new Point(1120, 300),
+      new Point(1120, 760),
+      new Point(590, 760),
+    ],
+  ],
+  numberOfRegions: 3,
 };
