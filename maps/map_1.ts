@@ -16,13 +16,14 @@ const HEIGHT: number = 900;
 export const MAP_1: MapTemplate = {
   width: WIDTH,
   height: HEIGHT,
-  robotCount: 1,
+  robotCount: 4,
   robotStartPositions: [
-    new Point(680, 260),
-    new Point(450, 450),
-    new Point(950, 650),
+    new Point(400, 240),
+    new Point(840, 140),
+    new Point(620, 700),
+    new Point(1100, 620),
   ],
-  goals: [new Goal([new Point(740, 30)], GoalShape.CIRCLE, 0, 7)],
+  goals: [new Goal([new Point(740, 30)], GoalShape.CIRCLE, 1, 7)],
   staticObstacles: [
     // The first obstacle is the boundary for the map
     new PolygonObstacle([
@@ -275,6 +276,15 @@ export const MAP_1: MapTemplate = {
         new Point(1400, 760),
         new Point(1400, 900),
         new Point(1340, 900),
+      ],
+      STATIC_OBSTACLE_COLOR
+    ),
+    new PolygonObstacle(
+      [
+        new Point(0, 560),
+        new Point(580, 560),
+        new Point(580, 600),
+        new Point(0, 600),
       ],
       STATIC_OBSTACLE_COLOR
     ),

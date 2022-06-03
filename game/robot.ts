@@ -246,7 +246,9 @@ export class Robot extends CircleObstacle {
       map(concat(this.irSensors, this.usSensors), (sensor) => {
         return { reading: sensor.getReading() };
       }),
-      isEmpty
+      (readings) => {
+        return readings.reading !== null;
+      }
     );
     const closestGoalPoint = this.getClosestGoalPoint();
     if (closestGoalPoint) {
