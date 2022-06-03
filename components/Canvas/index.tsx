@@ -71,8 +71,6 @@ const Canvas = (props: CanvasProp) => {
   // ========================= COMPONENT RENDERING =========================
   // This useEffect hook will act as the refresh loop for moving objects on the dynamic canvas
   useEffect(() => {
-    const robots = simulator.getRobots();
-
     // Set the ticker here
     const ticker = setInterval(() => {
       // Clear the dynamic canvas before rendering the new frame
@@ -95,8 +93,6 @@ const Canvas = (props: CanvasProp) => {
       const response = executeBatchAlgorithm(simulator.generatePayload());
 
       response.then((res) => simulator.execute(res)).catch(() => {});
-
-      // robots[0].drive(5, 5);
     }, TICKS_PER_UPDATE);
 
     // Unmount ticker

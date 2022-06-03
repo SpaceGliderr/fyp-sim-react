@@ -20,10 +20,21 @@ export class Simulator {
     this.robots = robotStartPositions.map((position, robotId) => {
       // Assign predefined goal to each robot if the goal exists
       if (this.getGoal(robotId)) {
-        return new Robot(position, robotId, this.getGoal(robotId));
+        return new Robot(
+          position,
+          robotId,
+          {
+            regionNumber: robotId,
+            regionPoints: this.map.unpack().regions[robotId],
+          },
+          this.getGoal(robotId)
+        );
       }
       // Otherwise, no goal is needed
-      return new Robot(position, robotId);
+      return new Robot(position, robotId, {
+        regionNumber: robotId,
+        regionPoints: this.map.unpack().regions[robotId],
+      });
     });
     this.staticObstacles = staticObstacles;
     this.dynamicObstacles = dynamicObstacles;
