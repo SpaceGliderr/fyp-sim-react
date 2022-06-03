@@ -1,4 +1,6 @@
 from algorithm.controllers.navigation.go_to_goal import GoToGoal
+from algorithm.controllers.mapping.mapping import Mapping
+from src.api_models import _TopologicalEnvironment
 from src.api_models import _PayloadTypes
 from models.robot import Robot
 from src.utils import transform_robot_api_model
@@ -10,6 +12,7 @@ class Arbiter:
     def __init__(self, robot: _Robot) -> None:
         id, pose, sensor_readings, current_goal, pid_metadata = transform_robot_api_model(robot)
         self.robot = Robot(id, pose, sensor_readings, current_goal, pid_metadata)
+        self.mapping = Mapping()
         pass
 
     def decide(self) -> None:
@@ -18,6 +21,8 @@ class Arbiter:
             'type': None,
             'payload': None,
         }
+
+        self.mapping.update_robot_readings(self.robot.id, self.robot.sensor_readings)
 
         if self.robot.current_goal is not None:
             payload['type'] = _PayloadTypes.gtg
