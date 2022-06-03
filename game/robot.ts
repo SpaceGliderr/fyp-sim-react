@@ -1,6 +1,6 @@
 import { concat, filter, indexOf, isEmpty, map, min } from "lodash";
 import { CanvasHelper } from "../utils/canvas";
-import { Line, Pose, Vector } from "../utils/coordinates";
+import { Line, Point, Pose, Vector } from "../utils/coordinates";
 import { MathHelper } from "../utils/math";
 import { Goal } from "./goal";
 import { CircleObstacle, PolygonObstacle } from "./obstacles";
@@ -62,8 +62,15 @@ export class Robot extends CircleObstacle {
   };
   private signal: Signal;
   private robotsWithinSignalRange: number[] = [];
+  private regionNumber: number;
+  private regionPoints: Point[];
 
-  constructor(vector: Vector, id: number, goal?: Goal) {
+  constructor(
+    vector: Vector,
+    id: number,
+    regionDetails: { regionNumber: number; regionPoints: Point[] },
+    goal?: Goal
+  ) {
     super(vector, Robot.RADIUS);
     this.pose = new Pose(vector, MathHelper.degToRad(Math.random() * 360)); // Spawn heading is random
     this.irSensors = IR_SENSOR_LOCS.map((loc) => {
@@ -79,6 +86,8 @@ export class Robot extends CircleObstacle {
     this.currentGoal = goal;
     this.id = id;
     this.signal = new Signal(vector);
+    this.regionNumber = regionDetails.regionNumber;
+    this.regionPoints = regionDetails.regionPoints;
   }
 
   public setPIDMetadata = (metadata: RobotPIDMetadata) => {
