@@ -8,6 +8,7 @@ class BaseAlgorithm:
         for robot in algorithm.robots:
             self.robots.append(robot)
         # robots = algorithm.robots
+        self.environment = algorithm.environment
         
     def makeDecisions(self):
         decisions = []
