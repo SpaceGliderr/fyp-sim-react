@@ -12,11 +12,19 @@ import {
 import { Goal, GoalShape } from "../../game/goal";
 import { SpawnerWorkerResponse } from "../../typings/spawner-worker";
 import { Point } from "../../utils/coordinates";
-import { executeBatchAlgorithm } from "../../public/api/algorithm";
+import {
+  executeBatchAlgorithm,
+  executeInitializeMapJSON,
+} from "../../public/api/algorithm";
+import { MAP_2 } from "../../maps/map_2";
+import { MAP_3 } from "../../maps/map_3";
 
 const Canvas = (props: CanvasProp) => {
+  // Initialize map array
+  const maps = useMemo(() => [MAP_1, MAP_2, MAP_3], []);
+
   // Declare selected map
-  const map = useMemo(() => new Map(MAP_1), []);
+  const map = useMemo(() => new Map(maps[2]), [maps]);
   const { width, height } = map.unpack();
 
   // Instantiate the simulator class based on the chosen map
@@ -24,6 +32,10 @@ const Canvas = (props: CanvasProp) => {
   const [spawnerWorker, setSpawnerWorker] = useState<Worker | undefined>(
     undefined
   );
+
+  // Initialize map json data
+  const response = executeInitializeMapJSON(simulator.generatePayload());
+  response.then((res) => console.log(res));
 
   // ========================= ENVIRONMENT RENDERING =========================
   // Declare canvas references
@@ -80,9 +92,9 @@ const Canvas = (props: CanvasProp) => {
 
       // Execute algorithm
       // TODO: Uncomment once it is debugged
-      // const response = executeBatchAlgorithm(simulator.generatePayload());
+      const response = executeBatchAlgorithm(simulator.generatePayload());
 
-      // response.then((res) => simulator.execute(res));
+      response.then((res) => simulator.execute(res)).catch(() => {});
 
       // robots[0].drive(5, 5);
     }, TICKS_PER_UPDATE);
