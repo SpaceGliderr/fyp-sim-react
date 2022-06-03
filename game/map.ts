@@ -10,6 +10,8 @@ export type MapTemplate = {
   staticObstacles: PolygonObstacle[];
   dynamicObstacles?: DynamicObstacle[]; // A map may or may not have dynamic obstacles
   goals?: Goal[]; // A map may or may not have goals
+  regions: Point[][]; // A map has more than one regions
+  numberOfRegions: number; // Number of regions for the map
 };
 
 export class Map {
@@ -20,6 +22,8 @@ export class Map {
   private width: number;
   private height: number;
   private goals?: Goal[];
+  private regions: Point[][] = [];
+  private numberOfRegions: number;
 
   constructor(map: MapTemplate) {
     this.robotCount = map.robotCount;
@@ -28,6 +32,8 @@ export class Map {
     this.width = map.width;
     this.height = map.height;
     this.goals = map.goals;
+    this.regions = map.regions;
+    this.numberOfRegions = map.numberOfRegions;
   }
 
   public unpack = () => {
@@ -39,6 +45,8 @@ export class Map {
       width: this.width,
       height: this.height,
       goals: this.goals,
+      regions: this.regions,
+      numberOfRegions: this.numberOfRegions,
     };
   };
 }
