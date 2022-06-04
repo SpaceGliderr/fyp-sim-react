@@ -14,8 +14,13 @@ export class Simulator {
   private map: Map;
 
   constructor(map: Map) {
-    const { robotStartPositions, staticObstacles, dynamicObstacles, goals } =
-      map.unpack();
+    const {
+      robotStartPositions,
+      staticObstacles,
+      dynamicObstacles,
+      goals,
+      regions,
+    } = map.unpack();
     this.goals = goals;
     this.robots = robotStartPositions.map((position, robotId) => {
       // Assign predefined goal to each robot if the goal exists
@@ -25,7 +30,7 @@ export class Simulator {
           robotId,
           {
             regionNumber: robotId,
-            regionPoints: this.map.unpack().regions[robotId],
+            regionPoints: regions[robotId],
           },
           this.getGoal(robotId)
         );
@@ -33,7 +38,7 @@ export class Simulator {
       // Otherwise, no goal is needed
       return new Robot(position, robotId, {
         regionNumber: robotId,
-        regionPoints: this.map.unpack().regions[robotId],
+        regionPoints: regions[robotId],
       });
     });
     this.staticObstacles = staticObstacles;
@@ -86,6 +91,7 @@ export class Simulator {
           )
         ) {
           console.log("Collision detected");
+          this.resolveCollision();
         }
       });
     });
