@@ -91,7 +91,6 @@ export class Simulator {
           ) ||
           !this.withinBoundaries(robot)
         ) {
-          console.log("Collision detected");
           this.resolveCollision(robot);
         }
       });
