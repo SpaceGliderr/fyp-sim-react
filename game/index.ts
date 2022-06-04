@@ -4,7 +4,7 @@ import { Collision } from "../utils/collision";
 import { Goal } from "./goal";
 import { Map } from "./map";
 import { CircleObstacle, DynamicObstacle, PolygonObstacle } from "./obstacles";
-import { AlgorithmPayload, Robot } from "./robot";
+import { AlgorithmPayload, Robot, RobotStatus } from "./robot";
 
 export class Simulator {
   private robots: Robot[];
@@ -88,16 +88,29 @@ export class Simulator {
           Collision.circlePolygonIntersect(
             obstacle,
             new CircleObstacle(robot.getPose().getPoint(), Robot.RADIUS)
-          )
+          ) ||
+          !this.withinBoundaries(robot)
         ) {
           console.log("Collision detected");
-          this.resolveCollision();
+          this.resolveCollision(robot);
         }
       });
     });
   };
 
-  public resolveCollision = () => {};
+  public withinBoundaries = (robot: Robot) => {
+    const { radius, point } = robot.unpack();
+    if (point.getX() - radius < 0) return false;
+    if (point.getX() + radius > this.map.getWidth()) return false;
+    if (point.getY() - radius < 0) return false;
+    if (point.getY() + radius > this.map.getHeight()) return false;
+    return true;
+  };
+
+  public resolveCollision = (robot: Robot) => {
+    robot.setPose(robot.getPreviousPose());
+    robot.setStatus(RobotStatus.COLLISION);
+  };
 
   public checkRobotGoals = () => {
     this.robots.forEach((robot) => {

@@ -36,6 +36,14 @@ export class Map {
     this.numberOfRegions = map.numberOfRegions;
   }
 
+  public getWidth = () => {
+    return this.width;
+  };
+
+  public getHeight = () => {
+    return this.height;
+  };
+
   public unpack = () => {
     return {
       robotCount: this.robotCount,
