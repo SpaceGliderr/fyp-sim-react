@@ -1,6 +1,5 @@
 import { CircleObstacle, PolygonObstacle } from "../game/obstacles";
-import { CanvasHelper } from "./canvas";
-import { Point } from "./coordinates";
+import { Line, Point } from "./coordinates";
 import { MathHelper } from "./math";
 
 export class Collision {
@@ -75,5 +74,79 @@ export class Collision {
     const totalRadius = cr1 + cr2;
 
     return dist < totalRadius;
+  };
+
+  public static circleLineIntersect = (
+    circle: CircleObstacle,
+    line: Line
+  ): boolean => {
+    // https://www.mathworks.com/matlabcentral/answers/401724-how-to-check-if-a-line-segment-intersects-a-circle
+    const { point: cp, radius: cr } = circle.unpack();
+    const points = line.getPoints();
+    const d = points[1].subtract(points[0]);
+    const f = points[0].subtract(cp);
+    const a = MathHelper.dotProduct(d, d);
+    const b = 2 * MathHelper.dotProduct(f, d);
+    const c = MathHelper.dotProduct(f, f) - Math.pow(cr, 2);
+
+    const discriminant = Math.pow(b, 2) - 4 * a * c;
+    if (discriminant < 0) {
+      return false;
+    } else {
+      const t1 = (-b + Math.sqrt(discriminant)) / (2 * a);
+      const t2 = (-b - Math.sqrt(discriminant)) / (2 * a);
+      return (t1 >= 0 && t1 <= 1) || (t2 >= 0 && t2 <= 1);
+    }
+  };
+
+  public static getCircleLineIntersectionPoints = (
+    circle: CircleObstacle,
+    line: Line
+  ) => {
+    // Checks for intersection and returns the points of intersection
+    const points = line.getPoints();
+    const { slope, intercept } = MathHelper.getLineEquation(
+      points[0],
+      points[1]
+    );
+    const { x, y } = circle.getPoint().unpack();
+
+    // var a = 1 + sq(m);
+    // var b = -h * 2 + (m * (n - k)) * 2;
+    // var c = sq(h) + sq(n - k) - sq(r);
+
+    const a = 1 + Math.pow(slope, 2);
+    const b = -x * 2 + slope * (intercept - y) * 2;
+    const c =
+      Math.pow(x, 2) +
+      Math.pow(intercept - y, 2) -
+      Math.pow(circle.getRadius(), 2);
+
+    const d = MathHelper.getDiscriminant(a, b, c);
+
+    let intersectXCoords: number[] = [];
+
+    if (d >= 0) {
+      intersectXCoords = [
+        (-b + Math.sqrt(d)) / (2 * a),
+        (-b - Math.sqrt(d)) / (2 * a),
+      ];
+
+      if (d === 0) {
+        // only 1 intersection
+        intersectXCoords = [intersectXCoords[0]];
+      }
+    }
+
+    const intersectionPoints: Point[] = [];
+    if (intersectXCoords.length > 0) {
+      intersectXCoords.forEach((x) => {
+        // Calculate y
+        const y = slope * x + intercept;
+        intersectionPoints.push(new Point(x, y));
+      });
+    }
+
+    return intersectionPoints;
   };
 }
