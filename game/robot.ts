@@ -184,13 +184,13 @@ export class Robot extends CircleObstacle {
     );
   };
 
-  public updateSensors = (obstacles: PolygonObstacle[]) => {
+  public updateSensors = (obstacles: PolygonObstacle[], robots: Robot[]) => {
     this.irSensors.forEach((sensor) => {
-      sensor.measure(obstacles);
+      sensor.measure(obstacles, robots, this.id);
     });
 
     this.usSensors.forEach((sensor) => {
-      sensor.measure(obstacles);
+      sensor.measure(obstacles, robots, this.id);
     });
   };
 

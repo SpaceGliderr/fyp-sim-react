@@ -76,7 +76,7 @@ export class Simulator {
 
   public readRobotSensors = () => {
     this.robots.forEach((robot) => {
-      robot.updateSensors(this.staticObstacles);
+      robot.updateSensors(this.staticObstacles, this.robots);
     });
   };
 
