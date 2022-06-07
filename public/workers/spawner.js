@@ -1,3 +1,5 @@
+let goalDuration = 40;
+
 const generateGoalsForRobots = (data) => {
   // 0. Define variables
   const { robots, goals, staticObstacles: obstacles, map } = data;
@@ -79,6 +81,7 @@ const generateGoal = (width, height, robot) => {
     },
     point: [{ x, y }],
     shape: "CIRCLE",
+    expiryDate: generateEndDate(),
   };
 };
 
@@ -190,9 +193,17 @@ const projectCircle = (center, radius, axis) => {
   return { min, max };
 };
 
+const generateEndDate = () => {
+  // Offset is to account fo the potential delay in the spawner
+  const expiryDate = new Date();
+  expiryDate.setSeconds(expiryDate.getSeconds() + goalDuration);
+  return expiryDate;
+};
+
 self.onmessage = (event) => {
   const { data } = event;
-  const parsedData = JSON.parse(data);
-  const generatedGoals = generateGoalsForRobots(parsedData);
+  const { simulator, duration } = JSON.parse(data);
+  goalDuration = duration;
+  const generatedGoals = generateGoalsForRobots(simulator);
   self.postMessage(generatedGoals);
 };
