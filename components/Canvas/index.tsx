@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CanvasProp } from "./props";
 import { CanvasHelper } from "../../utils/canvas";
 import { Simulator } from "../../game";
-import { MAP_1 } from "../../maps/map_1";
 import { Map } from "../../game/map";
 import {
   GOAL_SPAWN_RATE,
@@ -16,15 +15,12 @@ import {
   executeBatchAlgorithm,
   executeInitializeMapJSON,
 } from "../../public/api/algorithm";
-import { MAP_2 } from "../../maps/map_2";
-import { MAP_3 } from "../../maps/map_3";
 
 const Canvas = (props: CanvasProp) => {
-  // Initialize map array
-  const maps = useMemo(() => [MAP_1, MAP_2, MAP_3], []);
+  const { map: m } = props;
 
   // Declare selected map
-  const map = useMemo(() => new Map(maps[2]), [maps]);
+  const map = useMemo(() => new Map(m), [m]);
   const { width, height } = map.unpack();
 
   // Instantiate the simulator class based on the chosen map
@@ -71,6 +67,8 @@ const Canvas = (props: CanvasProp) => {
   // ========================= COMPONENT RENDERING =========================
   // This useEffect hook will act as the refresh loop for moving objects on the dynamic canvas
   useEffect(() => {
+    const robots = simulator.getRobots();
+
     // Set the ticker here
     const ticker = setInterval(() => {
       // Clear the dynamic canvas before rendering the new frame
@@ -90,9 +88,12 @@ const Canvas = (props: CanvasProp) => {
 
       // Execute algorithm
       // TODO: Uncomment once it is debugged
-      const response = executeBatchAlgorithm(simulator.generatePayload());
+      // const response = executeBatchAlgorithm(simulator.generatePayload());
 
-      response.then((res) => simulator.execute(res)).catch(() => {});
+      // response.then((res) => simulator.execute(res)).catch(() => {});
+
+      robots[0].drive(0.33, 0);
+      // robots[1].drive(5, 5);
     }, TICKS_PER_UPDATE);
 
     // Unmount ticker
