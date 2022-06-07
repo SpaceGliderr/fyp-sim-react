@@ -1,5 +1,6 @@
 import { Collision } from "../utils/collision";
 import { Point } from "../utils/coordinates";
+import { GeneralUtils } from "../utils/general";
 import { CircleObstacle, PolygonObstacle } from "./obstacles";
 import { GOAL_COLOR } from "./settings";
 
@@ -19,12 +20,15 @@ export class Goal {
   private obstacle: CircleObstacle | PolygonObstacle;
   private status: GoalStatus = GoalStatus.NOT_REACHED;
   private robotId: number;
+  private expiryDate?: Date; // only navigation goals will have expiry dates
 
   constructor(
     point: Point[],
     shape: GoalShape,
     robotId: number,
-    radius?: number
+    radius?: number,
+    expiryDate?: Date,
+    duration?: number
   ) {
     this.point = point;
     this.shape = shape;
@@ -33,10 +37,14 @@ export class Goal {
         ? new CircleObstacle(point[0], radius, GOAL_COLOR)
         : new PolygonObstacle(point, GOAL_COLOR);
     this.robotId = robotId;
+    this.expiryDate = expiryDate;
+    if (duration && !this.expiryDate) {
+      this.expiryDate = GeneralUtils.generateExpiryDate(duration);
+    }
   }
 
   public render = () => {
-    this.obstacle.render(true);
+    this.obstacle.render();
   };
 
   public unpack = () => {
@@ -76,6 +84,26 @@ export class Goal {
         this.obstacle as PolygonObstacle,
         robot
       );
+    }
+  };
+
+  public getExpiryDate = () => {
+    return this.expiryDate;
+  };
+
+  public isExpired = () => {
+    if (this.expiryDate) {
+      return new Date() > this.expiryDate;
+    } else {
+      return false;
+    }
+  };
+
+  public getTimeTaken = () => {
+    if (this.expiryDate) {
+      return new Date().getTime() - this.expiryDate.getTime();
+    } else {
+      return null;
     }
   };
 }
