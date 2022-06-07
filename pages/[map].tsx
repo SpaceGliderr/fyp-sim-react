@@ -13,11 +13,12 @@ const App: NextPage = () => {
     return null;
   }
 
-  // Get map from router parameter
-  const mapIndex = parseInt(map[0], 10);
-
   // Initialize map array
   const maps = [MAP_1, MAP_2, MAP_3];
+
+  // Get map from router parameter
+  const mapIndex =
+    parseInt(map[0], 10) > maps.length - 1 ? 0 : parseInt(map[0], 10);
 
   return <Canvas map={maps[mapIndex]} />;
 };
