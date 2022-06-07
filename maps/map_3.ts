@@ -60,15 +60,31 @@ export const MAP_3: MapTemplate = {
     ),
     new PolygonObstacle(
       [
-        new Point(0, 300),
-        new Point(120, 300),
         new Point(120, 240),
         new Point(260, 240),
         new Point(260, 300),
+        new Point(120, 300),
+      ],
+      STATIC_OBSTACLE_COLOR
+    ),
+    new PolygonObstacle(
+      [
+        new Point(0, 300),
         new Point(420, 300),
         new Point(420, 340),
-        new Point(380, 380),
-        new Point(380, 400),
+        new Point(0, 340),
+      ],
+      STATIC_OBSTACLE_COLOR
+    ),
+    new PolygonObstacle(
+      [new Point(360, 340), new Point(400, 340), new Point(360, 360)],
+      STATIC_OBSTACLE_COLOR
+    ),
+    new PolygonObstacle(
+      [
+        new Point(0, 340),
+        new Point(360, 340),
+        new Point(360, 400),
         new Point(0, 400),
       ],
       STATIC_OBSTACLE_COLOR
@@ -102,20 +118,46 @@ export const MAP_3: MapTemplate = {
     ),
     new PolygonObstacle(
       [
-        new Point(460, 760),
         new Point(460, 660),
         new Point(560, 660),
+        new Point(560, 760),
+        new Point(460, 760),
+      ],
+      STATIC_OBSTACLE_COLOR
+    ),
+    new PolygonObstacle(
+      [
+        new Point(520, 300),
+        new Point(560, 300),
         new Point(560, 340),
         new Point(520, 340),
-        new Point(520, 300),
-        new Point(580, 300),
+      ],
+      STATIC_OBSTACLE_COLOR
+    ),
+    new PolygonObstacle(
+      [
+        new Point(560, 300),
+        new Point(620, 300),
+        new Point(620, 760),
+        new Point(560, 760),
+      ],
+      STATIC_OBSTACLE_COLOR
+    ),
+    new PolygonObstacle(
+      [
         new Point(580, 220),
         new Point(880, 220),
         new Point(880, 300),
+        new Point(580, 300),
+      ],
+      STATIC_OBSTACLE_COLOR
+    ),
+    new PolygonObstacle(
+      [
+        new Point(620, 300),
         new Point(1000, 300),
         new Point(1000, 340),
         new Point(620, 340),
-        new Point(620, 760),
       ],
       STATIC_OBSTACLE_COLOR
     ),
@@ -150,11 +192,26 @@ export const MAP_3: MapTemplate = {
       [
         new Point(640, 420),
         new Point(720, 420),
-        new Point(780, 480),
-        new Point(780, 620),
         new Point(720, 680),
         new Point(640, 680),
       ],
+      STATIC_OBSTACLE_COLOR
+    ),
+    new PolygonObstacle(
+      [
+        new Point(720, 480),
+        new Point(780, 480),
+        new Point(780, 620),
+        new Point(720, 620),
+      ],
+      STATIC_OBSTACLE_COLOR
+    ),
+    new PolygonObstacle(
+      [new Point(720, 420), new Point(780, 480), new Point(720, 480)],
+      STATIC_OBSTACLE_COLOR
+    ),
+    new PolygonObstacle(
+      [new Point(720, 620), new Point(780, 620), new Point(720, 680)],
       STATIC_OBSTACLE_COLOR
     ),
     new PolygonObstacle(

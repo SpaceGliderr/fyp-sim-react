@@ -102,4 +102,32 @@ export class MathHelper {
 
     return result;
   };
+
+  public static getLineEquationComponents = (line: Line) => {
+    const { x1, y1, x2, y2 } = line.unpack();
+    // 𝑎=𝑦1−𝑦2,𝑏=𝑥2−𝑥1,𝑐=(𝑥1−𝑥2)𝑦1+𝑥1(𝑦2−𝑦1)
+    const a = y1 - y2;
+    const b = x2 - x1;
+    const c = x1 * y2 - x2 * y1;
+    const d = this.getDiscriminant(a, b, c);
+
+    return { a, b, c, d };
+  };
+
+  public static getDiscriminant = (a: number, b: number, c: number) => {
+    return Math.pow(b, 2) - 4 * a * c;
+  };
+
+  public static getLineEquation = (p1: Point, p2: Point) => {
+    const { x: x1, y: y1 } = p1.unpack();
+    const { x: x2, y: y2 } = p2.unpack();
+
+    // Get the slope of the line
+    const slope = (y2 - y1) / (x2 - x1);
+
+    // Get the y-intercept of the line
+    const intercept = y1 - slope * x1;
+
+    return { slope, intercept };
+  };
 }

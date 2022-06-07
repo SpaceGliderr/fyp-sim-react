@@ -61,6 +61,7 @@ def clear_map_json():
 def initialize_map_json(algorithm: _Algorithm):
     mapping = Mapping()
     try:
+        utils.clear_map_json()
         mapping.initialize_map_json(algorithm)
     except Exception as e:
         print(e)

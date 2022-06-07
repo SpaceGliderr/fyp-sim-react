@@ -4,7 +4,7 @@ import { Collision } from "../utils/collision";
 import { Goal } from "./goal";
 import { Map } from "./map";
 import { CircleObstacle, DynamicObstacle, PolygonObstacle } from "./obstacles";
-import { AlgorithmPayload, Robot } from "./robot";
+import { AlgorithmPayload, Robot, RobotStatus } from "./robot";
 
 export class Simulator {
   private robots: Robot[];
@@ -14,8 +14,13 @@ export class Simulator {
   private map: Map;
 
   constructor(map: Map) {
-    const { robotStartPositions, staticObstacles, dynamicObstacles, goals } =
-      map.unpack();
+    const {
+      robotStartPositions,
+      staticObstacles,
+      dynamicObstacles,
+      goals,
+      regions,
+    } = map.unpack();
     this.goals = goals;
     this.robots = robotStartPositions.map((position, robotId) => {
       // Assign predefined goal to each robot if the goal exists
@@ -25,7 +30,7 @@ export class Simulator {
           robotId,
           {
             regionNumber: robotId,
-            regionPoints: this.map.unpack().regions[robotId],
+            regionPoints: regions[robotId],
           },
           this.getGoal(robotId)
         );
@@ -33,7 +38,7 @@ export class Simulator {
       // Otherwise, no goal is needed
       return new Robot(position, robotId, {
         regionNumber: robotId,
-        regionPoints: this.map.unpack().regions[robotId],
+        regionPoints: regions[robotId],
       });
     });
     this.staticObstacles = staticObstacles;
@@ -71,7 +76,7 @@ export class Simulator {
 
   public readRobotSensors = () => {
     this.robots.forEach((robot) => {
-      robot.updateSensors(this.staticObstacles);
+      robot.updateSensors(this.staticObstacles, this.robots);
     });
   };
 
@@ -83,15 +88,28 @@ export class Simulator {
           Collision.circlePolygonIntersect(
             obstacle,
             new CircleObstacle(robot.getPose().getPoint(), Robot.RADIUS)
-          )
+          ) ||
+          !this.withinBoundaries(robot)
         ) {
-          console.log("Collision detected");
+          this.resolveCollision(robot);
         }
       });
     });
   };
 
-  public resolveCollision = () => {};
+  public withinBoundaries = (robot: Robot) => {
+    const { radius, point } = robot.unpack();
+    if (point.getX() - radius < 0) return false;
+    if (point.getX() + radius > this.map.getWidth()) return false;
+    if (point.getY() - radius < 0) return false;
+    if (point.getY() + radius > this.map.getHeight()) return false;
+    return true;
+  };
+
+  public resolveCollision = (robot: Robot) => {
+    robot.setPose(robot.getPreviousPose());
+    robot.setStatus(RobotStatus.COLLISION);
+  };
 
   public checkRobotGoals = () => {
     this.robots.forEach((robot) => {

@@ -1,7 +1,9 @@
 import { CanvasHelper } from "../utils/canvas";
+import { Collision } from "../utils/collision";
 import { Line, Point, Pose } from "../utils/coordinates";
 import { MathHelper } from "../utils/math";
 import { PolygonObstacle } from "./obstacles";
+import { Robot } from "./robot";
 import {
   IR_SENSOR_COLOR,
   IR_SENSOR_MEASUREMENT_LENGTH,
@@ -50,7 +52,11 @@ export abstract class Sensor {
     return this.mLen;
   };
 
-  public measure = (obstacles: PolygonObstacle[]) => {
+  public measure = (
+    obstacles: PolygonObstacle[],
+    robots: Robot[],
+    robotId: number
+  ) => {
     let intersect: boolean = false; // Intersect flag
 
     obstacles.forEach((obstacle) => {
@@ -65,6 +71,37 @@ export abstract class Sensor {
           intersect = true;
         }
       });
+    });
+
+    robots.forEach((robot) => {
+      if (robot.getId() === robotId) return;
+
+      const sensorLine = new Line(
+        MathHelper.calcEndPoint(this.pose, ROBOT_RADIUS * PIXEL_TO_CM_RATIO),
+        MathHelper.calcEndPoint(this.pose, this.mLen)
+      );
+
+      if (Collision.circleLineIntersect(robot, sensorLine)) {
+        const points = Collision.getCircleLineIntersectionPoints(
+          robot,
+          sensorLine
+        );
+
+        if (points.length === 2) {
+          if (
+            this.pose.getPoint().distanceTo(points[0]) <
+            this.pose.getPoint().distanceTo(points[1])
+          ) {
+            this.setReading(points[0]);
+          } else {
+            this.setReading(points[1]);
+          }
+          intersect = true;
+        } else if (points.length === 1) {
+          this.setReading(points[0]);
+          intersect = true;
+        }
+      }
     });
 
     if (!intersect) this.clearReading();

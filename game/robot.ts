@@ -25,6 +25,7 @@ export enum RobotStatus {
   IDLE = "IDLE", // When the robot is not doing anything
   PROCESSING = "PROCESSING", // When the robot is processing data
   TRANSIT = "TRANSIT", // When the robot is moving from point A to point B
+  COLLISION = "COLLISION", // When the robot is in collision with an obstacle
 }
 
 export type RobotPIDMetadata = {
@@ -64,6 +65,7 @@ export class Robot extends CircleObstacle {
   private robotsWithinSignalRange: number[] = [];
   private regionNumber: number;
   private regionPoints: Point[];
+  private previousPose: Pose;
 
   constructor(
     vector: Vector,
@@ -88,6 +90,7 @@ export class Robot extends CircleObstacle {
     this.signal = new Signal(vector);
     this.regionNumber = regionDetails.regionNumber;
     this.regionPoints = regionDetails.regionPoints;
+    this.previousPose = this.pose;
   }
 
   public setPIDMetadata = (metadata: RobotPIDMetadata) => {
@@ -103,6 +106,11 @@ export class Robot extends CircleObstacle {
   };
 
   public setPose = (pose: Pose) => {
+    // Set previous pose
+    this.previousPose = this.pose;
+    // if (hasCollided) {}
+
+    // Set new pose
     this.pose = pose;
 
     const point = this.pose.getPoint();
@@ -176,13 +184,13 @@ export class Robot extends CircleObstacle {
     );
   };
 
-  public updateSensors = (obstacles: PolygonObstacle[]) => {
+  public updateSensors = (obstacles: PolygonObstacle[], robots: Robot[]) => {
     this.irSensors.forEach((sensor) => {
-      sensor.measure(obstacles);
+      sensor.measure(obstacles, robots, this.id);
     });
 
     this.usSensors.forEach((sensor) => {
-      sensor.measure(obstacles);
+      sensor.measure(obstacles, robots, this.id);
     });
   };
 
@@ -316,5 +324,9 @@ export class Robot extends CircleObstacle {
 
   public getRobotsWithinSignalRange = () => {
     return this.robotsWithinSignalRange;
+  };
+
+  public getPreviousPose = () => {
+    return this.previousPose;
   };
 }
