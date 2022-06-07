@@ -1,5 +1,5 @@
 import combinations from "combinations";
-import { concat, filter, map as lodashMap } from "lodash";
+import { concat, filter } from "lodash";
 import { Collision } from "../utils/collision";
 import { Goal } from "./goal";
 import { Map } from "./map";
@@ -115,8 +115,7 @@ export class Simulator {
     this.robots.forEach((robot) => {
       const robotCheckGoal = robot.checkGoal();
       if (robotCheckGoal !== null && this.goals) {
-        console.log("Robot reached goal");
-        this.goals = lodashMap(this.goals, (goal: Goal) => {
+        this.goals = filter(this.goals, (goal) => {
           if (goal.getRobotId() !== robotCheckGoal) {
             return goal;
           }
