@@ -46,6 +46,11 @@ export interface GoToGoalPayload extends ExecutionPayload {
   pid_metadata: RobotPIDMetadata;
 }
 
+export type ActivityHistory = {
+  timeTaken?: number | null; // in milliseconds, null means it was a permanent goal
+  goal: Goal;
+};
+
 export class Robot extends CircleObstacle {
   public static readonly RADIUS = ROBOT_RADIUS * PIXEL_TO_CM_RATIO;
   public static readonly COLOR = ROBOT_COLOR;
@@ -55,7 +60,7 @@ export class Robot extends CircleObstacle {
   private usSensors: USSensor[];
   private status: RobotStatus = RobotStatus.IDLE;
   private currentGoal: Goal | undefined = undefined; // A robot's current goal can be undefined
-  private activityHistory: Goal[] = [];
+  private activityHistory: ActivityHistory[] = [];
   private id: number;
   private pidMetadata = {
     prev_eP: 0,
@@ -173,6 +178,7 @@ export class Robot extends CircleObstacle {
 
     // Render robot goal
     if (this.currentGoal) {
+      console.log(this.id, this.currentGoal);
       this.currentGoal.render();
     }
 
@@ -222,7 +228,18 @@ export class Robot extends CircleObstacle {
     if (this.currentGoal) {
       this.currentGoal.setStatusToReached();
 
-      this.activityHistory.push(this.currentGoal);
+      this.activityHistory.push({
+        goal: this.currentGoal,
+        timeTaken: this.currentGoal.getTimeTaken(),
+      });
+
+      this.currentGoal = undefined;
+    }
+  };
+
+  private goalNotReached = () => {
+    if (this.currentGoal) {
+      this.activityHistory.push({ goal: this.currentGoal });
 
       this.currentGoal = undefined;
     }
@@ -231,6 +248,9 @@ export class Robot extends CircleObstacle {
   public checkGoal = () => {
     if (this.currentGoal && this.currentGoal.checkForCollisionWithRobot(this)) {
       this.goalReached();
+      return this.id;
+    } else if (this.currentGoal && this.currentGoal.isExpired()) {
+      this.goalNotReached();
       return this.id;
     }
     return null;

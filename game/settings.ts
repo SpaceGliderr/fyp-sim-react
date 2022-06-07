@@ -52,3 +52,5 @@ export const SIGNAL_RADIUS_IN_PX = SIGNAL_RADIUS_IN_CM * PIXEL_TO_CM_RATIO;
 export const SIGNAL_CIRCLE_COLOR_RGB = [247, 185, 156];
 
 export const SIGNAL_CIRCLE_OPACITY = 0.2;
+
+export const GOAL_TIMER_DURATION = 40; // in seconds

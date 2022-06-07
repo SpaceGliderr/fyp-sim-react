@@ -3,6 +3,7 @@ export type SpawnerWorkerResponse = {
   obstacle: SpawnerWorkerObstacle;
   point: SpawnerWorkerPoint[];
   shape: string;
+  expiryDate: Date;
 };
 
 export type SpawnerWorkerObstacle = {
