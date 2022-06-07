@@ -5,6 +5,7 @@ import { Simulator } from "../../game";
 import { Map } from "../../game/map";
 import {
   GOAL_SPAWN_RATE,
+  GOAL_TIMER_DURATION,
   SENSOR_TICKS_PER_UPDATE,
   TICKS_PER_UPDATE,
 } from "../../game/settings";
@@ -118,7 +119,9 @@ const Canvas = (props: CanvasProp) => {
           new Worker("./workers/spawner.js", { type: "module" })
         );
       } else {
-        spawnerWorker.postMessage(JSON.stringify(simulator));
+        spawnerWorker.postMessage(
+          JSON.stringify({ simulator, duration: GOAL_TIMER_DURATION })
+        );
       }
     }, GOAL_SPAWN_RATE);
 
@@ -132,12 +135,12 @@ const Canvas = (props: CanvasProp) => {
 
         if (data) {
           const generatedGoals = data.map((g: SpawnerWorkerResponse) => {
-            const { id, obstacle, point, shape: s } = g;
+            const { id, obstacle, point, shape: s, expiryDate } = g;
             const points = point.map((p) => {
               return new Point(p.x, p.y);
             });
             const shape = s === "CIRCLE" ? GoalShape.CIRCLE : GoalShape.POLYGON;
-            return new Goal(points, shape, id, obstacle.radius);
+            return new Goal(points, shape, id, obstacle.radius, expiryDate);
           });
           simulator.addGoals(generatedGoals);
         }
