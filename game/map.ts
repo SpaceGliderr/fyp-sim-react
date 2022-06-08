@@ -12,6 +12,7 @@ export type MapTemplate = {
   goals?: Goal[]; // A map may or may not have goals
   regions: Point[][]; // A map has more than one regions
   numberOfRegions: number; // Number of regions for the map
+  leaderRobotStartPosition: Point; // Starting position for the leader robot
 };
 
 export class Map {
@@ -24,6 +25,7 @@ export class Map {
   private goals?: Goal[];
   private regions: Point[][] = [];
   private numberOfRegions: number;
+  private leaderRobotStartPosition: Point;
 
   constructor(map: MapTemplate) {
     this.robotCount = map.robotCount;
@@ -34,6 +36,7 @@ export class Map {
     this.goals = map.goals;
     this.regions = map.regions;
     this.numberOfRegions = map.numberOfRegions;
+    this.leaderRobotStartPosition = map.leaderRobotStartPosition;
   }
 
   public getWidth = () => {
@@ -55,6 +58,7 @@ export class Map {
       goals: this.goals,
       regions: this.regions,
       numberOfRegions: this.numberOfRegions,
+      leaderRobotStartPosition: this.leaderRobotStartPosition,
     };
   };
 }
