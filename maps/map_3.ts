@@ -254,4 +254,5 @@ export const MAP_3: MapTemplate = {
     ],
   ],
   numberOfRegions: 3,
+  leaderRobotStartPosition: new Point(580, 190),
 };
