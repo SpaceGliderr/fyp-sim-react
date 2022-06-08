@@ -1,10 +1,17 @@
 import combinations from "combinations";
-import { concat, filter } from "lodash";
+import { concat, filter, findIndex } from "lodash";
 import { Collision } from "../utils/collision";
+import { Point } from "../utils/coordinates";
 import { Goal } from "./goal";
-import { Map } from "./map";
+import { Map, MappingGoal } from "./map";
 import { CircleObstacle, DynamicObstacle, PolygonObstacle } from "./obstacles";
-import { AlgorithmPayload, Robot, RobotStatus } from "./robot";
+import { AlgorithmPayload, LeaderRobot, Robot, RobotStatus } from "./robot";
+
+export enum SimulatorAction {
+  MAPPING = "MAPPING",
+  MAPPING_COMPLETE = "MAPPING_COMPLETE",
+  NAVIGATION = "NAVIGATION",
+}
 
 export class Simulator {
   private robots: Robot[];
@@ -12,7 +19,9 @@ export class Simulator {
   private dynamicObstacles?: DynamicObstacle[]; // TODO: Make this at a later date
   private goals?: Goal[];
   private map: Map;
-  private leaderRobot: Robot;
+  private leaderRobot: LeaderRobot;
+  private action: SimulatorAction = SimulatorAction.MAPPING; // Default after initializing is mapping
+  private mappingGoals: MappingGoal[];
 
   constructor(map: Map) {
     const {
@@ -22,8 +31,11 @@ export class Simulator {
       goals,
       regions,
       leaderRobotStartPosition,
+      numberOfRegions,
+      mappingGoals,
     } = map.unpack();
-    this.goals = goals;
+    this.goals = goals ?? [];
+    this.mappingGoals = mappingGoals;
     this.robots = robotStartPositions.map((position, robotId) => {
       // Assign predefined goal to each robot if the goal exists
       if (this.getGoal(robotId)) {
@@ -31,6 +43,7 @@ export class Simulator {
           position,
           robotId,
           false,
+          this.getMappingGoals(robotId),
           {
             regionNumber: robotId,
             regionPoints: regions[robotId],
@@ -39,15 +52,34 @@ export class Simulator {
         );
       }
       // Otherwise, no goal is needed
-      return new Robot(position, robotId, false, {
-        regionNumber: robotId,
-        regionPoints: regions[robotId],
-      });
+      return new Robot(
+        position,
+        robotId,
+        false,
+        this.getMappingGoals(robotId),
+        {
+          regionNumber: robotId,
+          regionPoints: regions[robotId],
+        },
+        undefined
+      );
     });
     this.staticObstacles = staticObstacles;
     this.dynamicObstacles = dynamicObstacles;
     this.map = map;
-    this.leaderRobot = new Robot(leaderRobotStartPosition, -1, true);
+    this.leaderRobot = new LeaderRobot(
+      {
+        vector: new Point(
+          leaderRobotStartPosition.getX(),
+          leaderRobotStartPosition.getY()
+        ),
+        id: -1,
+        leader: true,
+        mappingGoals: [],
+      },
+      numberOfRegions,
+      regions
+    );
   }
 
   public unpack = () => {
@@ -58,6 +90,7 @@ export class Simulator {
       goals: this.goals,
       map: this.map,
       leaderRobot: this.leaderRobot,
+      action: this.action,
     };
   };
 
@@ -134,10 +167,37 @@ export class Simulator {
     });
   };
 
+  public checkRobotMappingGoals = () => {
+    this.robots.forEach((robot) => {
+      const robotCheckGoal = robot.checkMappingGoal();
+      if (robotCheckGoal !== null && this.mappingGoals) {
+        const { id, removedMappingGoal } = robotCheckGoal;
+        const idxToRemove = findIndex(
+          this.mappingGoals[id].goals,
+          removedMappingGoal
+        );
+        this.mappingGoals = filter(this.mappingGoals, (mappingGoal) => {
+          const { regionNumber, goals } = mappingGoal;
+          if (regionNumber !== id) return mappingGoal;
+          mappingGoal.goals = filter(goals, (goal, idx) => {
+            if (idx !== idxToRemove) return goal;
+          }) as Goal[];
+          return mappingGoal;
+        }) as MappingGoal[];
+      }
+    });
+  };
+
   public getGoal = (idx: number) => {
     return filter(this.goals, (goal: Goal) => {
       return goal.getRobotId() === idx;
     })[0];
+  };
+
+  public getMappingGoals = (regionNumber: number) => {
+    return filter(this.mappingGoals, (mappingGoal: MappingGoal) => {
+      return mappingGoal.regionNumber === regionNumber;
+    })[0].goals;
   };
 
   public getRobotById = (id: number) => {
@@ -213,5 +273,25 @@ export class Simulator {
 
   public getLeaderRobot = () => {
     return this.leaderRobot;
+  };
+
+  public setActionToNavigation = () => {
+    this.action = SimulatorAction.NAVIGATION;
+  };
+
+  public mapping = () => {
+    this.checkRobotMappingGoals();
+
+    if (this.mappingGoals.length === 0) {
+      this.action = SimulatorAction.MAPPING_COMPLETE;
+    }
+  };
+
+  public mapGenerated = () => {
+    this.action = SimulatorAction.NAVIGATION;
+  };
+
+  public getAction = () => {
+    return this.action;
   };
 }
