@@ -162,9 +162,14 @@ export class Robot extends CircleObstacle {
     };
   };
 
-  public render = () => {
+  public render = (isStatic: boolean = false) => {
     // Render robot
-    CanvasHelper.drawArc(this.pose.getPoint(), Robot.RADIUS, this.robotColor);
+    CanvasHelper.drawArc(
+      this.pose.getPoint(),
+      Robot.RADIUS,
+      this.robotColor,
+      isStatic
+    );
 
     // Render robot heading
     CanvasHelper.drawLine(
@@ -172,7 +177,8 @@ export class Robot extends CircleObstacle {
         this.pose.getPoint(),
         MathHelper.calcEndPoint(this.pose, Robot.RADIUS)
       ),
-      Robot.HEADING_COLOR
+      Robot.HEADING_COLOR,
+      isStatic
     );
 
     // Render robot sensor
@@ -193,7 +199,8 @@ export class Robot extends CircleObstacle {
     CanvasHelper.drawArc(
       this.signal.getPoint(),
       this.signal.getRadius(),
-      `rgba(${SIGNAL_CIRCLE_COLOR_RGB[0]}, ${SIGNAL_CIRCLE_COLOR_RGB[1]}, ${SIGNAL_CIRCLE_COLOR_RGB[2]}, ${SIGNAL_CIRCLE_OPACITY})`
+      `rgba(${SIGNAL_CIRCLE_COLOR_RGB[0]}, ${SIGNAL_CIRCLE_COLOR_RGB[1]}, ${SIGNAL_CIRCLE_COLOR_RGB[2]}, ${SIGNAL_CIRCLE_OPACITY})`,
+      isStatic
     );
   };
 

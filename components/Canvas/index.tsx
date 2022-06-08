@@ -62,6 +62,9 @@ const Canvas = (props: CanvasProp) => {
     // Render the static obstacles
     simulator.renderStaticObstacles();
 
+    // Render leader robots (leader robots cannot move, hence they can be rendered outside of the simulation loop)
+    simulator.renderLeaderRobot();
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -80,7 +83,6 @@ const Canvas = (props: CanvasProp) => {
 
       // Initialize robots
       simulator.renderRobots();
-      simulator.renderLeaderRobot();
 
       // Check for collisions
       simulator.checkForCollisions();

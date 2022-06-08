@@ -87,7 +87,7 @@ export class Simulator {
   };
 
   public renderLeaderRobot = () => {
-    this.leaderRobot.render();
+    this.leaderRobot.render(true);
   };
 
   public checkForCollisions = () => {
