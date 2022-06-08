@@ -80,6 +80,7 @@ const Canvas = (props: CanvasProp) => {
 
       // Initialize robots
       simulator.renderRobots();
+      simulator.renderLeaderRobot();
 
       // Check for collisions
       simulator.checkForCollisions();
@@ -93,7 +94,7 @@ const Canvas = (props: CanvasProp) => {
 
       // response.then((res) => simulator.execute(res)).catch(() => {});
 
-      robots[0].drive(0.33, 0);
+      robots[0].drive(10, 0);
       // robots[1].drive(5, 5);
     }, TICKS_PER_UPDATE);
 
