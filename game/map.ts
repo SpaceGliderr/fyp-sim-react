@@ -2,6 +2,11 @@ import { Point } from "../utils/coordinates";
 import { Goal } from "./goal";
 import { DynamicObstacle, PolygonObstacle } from "./obstacles";
 
+export type MappingGoal = {
+  goals: Goal[];
+  regionNumber: number; // Follows the index number of the region in the regions array
+};
+
 export type MapTemplate = {
   width: number;
   height: number;
@@ -13,6 +18,7 @@ export type MapTemplate = {
   regions: Point[][]; // A map has more than one regions
   numberOfRegions: number; // Number of regions for the map
   leaderRobotStartPosition: Point; // Starting position for the leader robot
+  mappingGoals: MappingGoal[]; // Goals for the mapping phase
 };
 
 export class Map {
@@ -22,10 +28,11 @@ export class Map {
   private robotStartPositions: Point[];
   private width: number;
   private height: number;
-  private goals?: Goal[];
+  private goals?: Goal[] = [];
   private regions: Point[][] = [];
   private numberOfRegions: number;
   private leaderRobotStartPosition: Point;
+  private mappingGoals: MappingGoal[];
 
   constructor(map: MapTemplate) {
     this.robotCount = map.robotCount;
@@ -37,6 +44,7 @@ export class Map {
     this.regions = map.regions;
     this.numberOfRegions = map.numberOfRegions;
     this.leaderRobotStartPosition = map.leaderRobotStartPosition;
+    this.mappingGoals = map.mappingGoals;
   }
 
   public getWidth = () => {
@@ -59,6 +67,7 @@ export class Map {
       regions: this.regions,
       numberOfRegions: this.numberOfRegions,
       leaderRobotStartPosition: this.leaderRobotStartPosition,
+      mappingGoals: this.mappingGoals,
     };
   };
 }
