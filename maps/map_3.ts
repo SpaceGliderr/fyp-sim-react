@@ -22,7 +22,6 @@ export const MAP_3: MapTemplate = {
     new Point(460, 440),
     new Point(1020, 480),
   ],
-  goals: [],
   staticObstacles: [
     // The first obstacle is the boundary for the map
     new PolygonObstacle([
@@ -255,4 +254,41 @@ export const MAP_3: MapTemplate = {
   ],
   numberOfRegions: 3,
   leaderRobotStartPosition: new Point(580, 190),
+  mappingGoals: [
+    {
+      regionNumber: 0,
+      goals: [
+        new Goal([new Point(680, 20)], GoalShape.CIRCLE, 0, 7),
+        new Goal([new Point(820, 120)], GoalShape.CIRCLE, 0, 7),
+        new Goal([new Point(980, 200)], GoalShape.CIRCLE, 0, 7),
+        new Goal([new Point(480, 160)], GoalShape.CIRCLE, 0, 7),
+        new Goal([new Point(360, 60)], GoalShape.CIRCLE, 0, 7),
+        new Goal([new Point(300, 180)], GoalShape.CIRCLE, 0, 7),
+        new Goal([new Point(280, 260)], GoalShape.CIRCLE, 0, 7),
+        new Goal([new Point(100, 200)], GoalShape.CIRCLE, 0, 7),
+        new Goal([new Point(60, 60)], GoalShape.CIRCLE, 0, 7),
+        new Goal([new Point(20, 280)], GoalShape.CIRCLE, 0, 7),
+      ],
+    },
+    {
+      regionNumber: 1,
+      goals: [
+        new Goal([new Point(460, 460)], GoalShape.CIRCLE, 1, 7),
+        new Goal([new Point(220, 520)], GoalShape.CIRCLE, 1, 7),
+        new Goal([new Point(30, 430)], GoalShape.CIRCLE, 1, 7),
+        new Goal([new Point(400, 740)], GoalShape.CIRCLE, 1, 7),
+      ],
+    },
+    {
+      regionNumber: 2,
+      goals: [
+        new Goal([new Point(1040, 420)], GoalShape.CIRCLE, 2, 7),
+        new Goal([new Point(700, 380)], GoalShape.CIRCLE, 2, 7),
+        new Goal([new Point(810, 550)], GoalShape.CIRCLE, 2, 7),
+        new Goal([new Point(720, 720)], GoalShape.CIRCLE, 2, 7),
+        new Goal([new Point(1090, 730)], GoalShape.CIRCLE, 2, 7),
+        new Goal([new Point(960, 1000)], GoalShape.CIRCLE, 2, 7),
+      ],
+    },
+  ],
 };

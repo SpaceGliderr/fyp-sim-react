@@ -23,7 +23,6 @@ export const MAP_1: MapTemplate = {
     new Point(620, 700),
     new Point(1100, 620),
   ],
-  goals: [new Goal([new Point(740, 30)], GoalShape.CIRCLE, 1, 7)],
   staticObstacles: [
     // The first obstacle is the boundary for the map
     new PolygonObstacle([
@@ -317,4 +316,51 @@ export const MAP_1: MapTemplate = {
   ],
   numberOfRegions: 4,
   leaderRobotStartPosition: new Point(700, 460),
+  mappingGoals: [
+    {
+      regionNumber: 0,
+      goals: [
+        new Goal([new Point(360, 140)], GoalShape.CIRCLE, 0, 7),
+        new Goal([new Point(180, 30)], GoalShape.CIRCLE, 0, 7),
+        new Goal([new Point(160, 250)], GoalShape.CIRCLE, 0, 7),
+        new Goal([new Point(440, 360)], GoalShape.CIRCLE, 0, 7),
+        new Goal([new Point(40, 460)], GoalShape.CIRCLE, 0, 7),
+        new Goal([new Point(500, 540)], GoalShape.CIRCLE, 0, 7),
+        new Goal([new Point(670, 80)], GoalShape.CIRCLE, 0, 7),
+      ],
+    },
+    {
+      regionNumber: 1,
+      goals: [
+        new Goal([new Point(780, 80)], GoalShape.CIRCLE, 1, 7),
+        new Goal([new Point(800, 340)], GoalShape.CIRCLE, 1, 7),
+        new Goal([new Point(950, 300)], GoalShape.CIRCLE, 1, 7),
+        new Goal([new Point(1120, 80)], GoalShape.CIRCLE, 1, 7),
+        new Goal([new Point(1340, 240)], GoalShape.CIRCLE, 1, 7),
+      ],
+    },
+    {
+      regionNumber: 2,
+      goals: [
+        new Goal([new Point(1280, 980)], GoalShape.CIRCLE, 2, 7),
+        new Goal([new Point(1370, 430)], GoalShape.CIRCLE, 2, 7),
+        new Goal([new Point(980, 600)], GoalShape.CIRCLE, 2, 7),
+        new Goal([new Point(950, 720)], GoalShape.CIRCLE, 2, 7),
+        new Goal([new Point(860, 880)], GoalShape.CIRCLE, 2, 7),
+        new Goal([new Point(780, 420)], GoalShape.CIRCLE, 2, 7),
+        new Goal([new Point(740, 760)], GoalShape.CIRCLE, 2, 7),
+      ],
+    },
+    {
+      regionNumber: 3,
+      goals: [
+        new Goal([new Point(660, 620)], GoalShape.CIRCLE, 3, 7),
+        new Goal([new Point(640, 800)], GoalShape.CIRCLE, 3, 7),
+        new Goal([new Point(110, 820)], GoalShape.CIRCLE, 3, 7),
+        new Goal([new Point(420, 700)], GoalShape.CIRCLE, 3, 7),
+        new Goal([new Point(210, 670)], GoalShape.CIRCLE, 3, 7),
+        new Goal([new Point(210, 880)], GoalShape.CIRCLE, 3, 7),
+      ],
+    },
+  ],
 };
