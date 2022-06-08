@@ -160,4 +160,5 @@ export const MAP_2: MapTemplate = {
     ],
   ],
   numberOfRegions: 2,
+  leaderRobotStartPosition: new Point(500, 260),
 };

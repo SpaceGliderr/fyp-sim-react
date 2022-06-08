@@ -1,4 +1,4 @@
-import { concat, filter, indexOf, isEmpty, map, min } from "lodash";
+import { concat, filter, includes, indexOf, isEmpty, map, min } from "lodash";
 import { CanvasHelper } from "../utils/canvas";
 import { Line, Point, Pose, Vector } from "../utils/coordinates";
 import { MathHelper } from "../utils/math";
@@ -8,6 +8,7 @@ import { IRSensor, USSensor } from "./sensor";
 import {
   DIFFERENCE_IN_TIME,
   IR_SENSOR_LOCS,
+  LEADER_ROBOT_COLOR,
   MAX_WHEEL_DRIVE_RATES,
   PIXEL_TO_CM_RATIO,
   ROBOT_COLOR,
@@ -53,7 +54,7 @@ export type ActivityHistory = {
 
 export class Robot extends CircleObstacle {
   public static readonly RADIUS = ROBOT_RADIUS * PIXEL_TO_CM_RATIO;
-  public static readonly COLOR = ROBOT_COLOR;
+  // public static readonly COLOR = ROBOT_COLOR;
   public static readonly HEADING_COLOR = ROBOT_HEADING_COLOR;
   private pose: Pose;
   private irSensors: IRSensor[];
@@ -68,34 +69,41 @@ export class Robot extends CircleObstacle {
   };
   private signal: Signal;
   private robotsWithinSignalRange: number[] = [];
-  private regionNumber: number;
-  private regionPoints: Point[];
+  private regionNumber?: number;
+  private regionPoints?: Point[];
   private previousPose: Pose;
+  private robotColor: string;
 
   constructor(
     vector: Vector,
     id: number,
-    regionDetails: { regionNumber: number; regionPoints: Point[] },
+    leader: boolean,
+    regionDetails?: { regionNumber: number; regionPoints: Point[] },
     goal?: Goal
   ) {
     super(vector, Robot.RADIUS);
     this.pose = new Pose(vector, MathHelper.degToRad(Math.random() * 360)); // Spawn heading is random
-    this.irSensors = IR_SENSOR_LOCS.map((loc) => {
-      return new IRSensor(
-        new Pose(vector, MathHelper.degToRad(loc) + this.pose.getTheta())
-      );
-    });
-    this.usSensors = US_SENSOR_LOCS.map((loc) => {
-      return new USSensor(
-        new Pose(vector, MathHelper.degToRad(loc) + this.pose.getTheta())
-      );
-    });
+    this.irSensors = leader
+      ? []
+      : IR_SENSOR_LOCS.map((loc) => {
+          return new IRSensor(
+            new Pose(vector, MathHelper.degToRad(loc) + this.pose.getTheta())
+          );
+        });
+    this.usSensors = leader
+      ? []
+      : US_SENSOR_LOCS.map((loc) => {
+          return new USSensor(
+            new Pose(vector, MathHelper.degToRad(loc) + this.pose.getTheta())
+          );
+        });
     this.currentGoal = goal;
     this.id = id;
     this.signal = new Signal(vector);
-    this.regionNumber = regionDetails.regionNumber;
-    this.regionPoints = regionDetails.regionPoints;
+    this.regionNumber = regionDetails?.regionNumber;
+    this.regionPoints = regionDetails?.regionPoints;
     this.previousPose = this.pose;
+    this.robotColor = leader ? LEADER_ROBOT_COLOR : ROBOT_COLOR;
   }
 
   public setPIDMetadata = (metadata: RobotPIDMetadata) => {
@@ -154,9 +162,14 @@ export class Robot extends CircleObstacle {
     };
   };
 
-  public render = () => {
+  public render = (isStatic: boolean = false) => {
     // Render robot
-    CanvasHelper.drawArc(this.pose.getPoint(), Robot.RADIUS, Robot.COLOR);
+    CanvasHelper.drawArc(
+      this.pose.getPoint(),
+      Robot.RADIUS,
+      this.robotColor,
+      isStatic
+    );
 
     // Render robot heading
     CanvasHelper.drawLine(
@@ -164,7 +177,8 @@ export class Robot extends CircleObstacle {
         this.pose.getPoint(),
         MathHelper.calcEndPoint(this.pose, Robot.RADIUS)
       ),
-      Robot.HEADING_COLOR
+      Robot.HEADING_COLOR,
+      isStatic
     );
 
     // Render robot sensor
@@ -178,7 +192,6 @@ export class Robot extends CircleObstacle {
 
     // Render robot goal
     if (this.currentGoal) {
-      console.log(this.id, this.currentGoal);
       this.currentGoal.render();
     }
 
@@ -186,7 +199,8 @@ export class Robot extends CircleObstacle {
     CanvasHelper.drawArc(
       this.signal.getPoint(),
       this.signal.getRadius(),
-      `rgba(${SIGNAL_CIRCLE_COLOR_RGB[0]}, ${SIGNAL_CIRCLE_COLOR_RGB[1]}, ${SIGNAL_CIRCLE_COLOR_RGB[2]}, ${SIGNAL_CIRCLE_OPACITY})`
+      `rgba(${SIGNAL_CIRCLE_COLOR_RGB[0]}, ${SIGNAL_CIRCLE_COLOR_RGB[1]}, ${SIGNAL_CIRCLE_COLOR_RGB[2]}, ${SIGNAL_CIRCLE_OPACITY})`,
+      isStatic
     );
   };
 
@@ -348,5 +362,9 @@ export class Robot extends CircleObstacle {
 
   public getPreviousPose = () => {
     return this.previousPose;
+  };
+
+  public isWithinLeaderRobotRange = () => {
+    return includes(this.robotsWithinSignalRange, -1);
   };
 }

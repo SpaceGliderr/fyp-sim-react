@@ -12,6 +12,7 @@ export class Simulator {
   private dynamicObstacles?: DynamicObstacle[]; // TODO: Make this at a later date
   private goals?: Goal[];
   private map: Map;
+  private leaderRobot: Robot;
 
   constructor(map: Map) {
     const {
@@ -20,6 +21,7 @@ export class Simulator {
       dynamicObstacles,
       goals,
       regions,
+      leaderRobotStartPosition,
     } = map.unpack();
     this.goals = goals;
     this.robots = robotStartPositions.map((position, robotId) => {
@@ -28,6 +30,7 @@ export class Simulator {
         return new Robot(
           position,
           robotId,
+          false,
           {
             regionNumber: robotId,
             regionPoints: regions[robotId],
@@ -36,7 +39,7 @@ export class Simulator {
         );
       }
       // Otherwise, no goal is needed
-      return new Robot(position, robotId, {
+      return new Robot(position, robotId, false, {
         regionNumber: robotId,
         regionPoints: regions[robotId],
       });
@@ -44,6 +47,7 @@ export class Simulator {
     this.staticObstacles = staticObstacles;
     this.dynamicObstacles = dynamicObstacles;
     this.map = map;
+    this.leaderRobot = new Robot(leaderRobotStartPosition, -1, true);
   }
 
   public unpack = () => {
@@ -53,6 +57,7 @@ export class Simulator {
       dynamicObstacles: this.dynamicObstacles,
       goals: this.goals,
       map: this.map,
+      leaderRobot: this.leaderRobot,
     };
   };
 
@@ -76,8 +81,13 @@ export class Simulator {
 
   public readRobotSensors = () => {
     this.robots.forEach((robot) => {
-      robot.updateSensors(this.staticObstacles, this.robots);
+      const robots = concat(this.robots, this.leaderRobot);
+      robot.updateSensors(this.staticObstacles, robots);
     });
+  };
+
+  public renderLeaderRobot = () => {
+    this.leaderRobot.render(true);
   };
 
   public checkForCollisions = () => {
@@ -180,21 +190,28 @@ export class Simulator {
   };
 
   public searchForSignalOverlaps = () => {
+    // Combine all the robots into a single array
+    const robots = concat(this.robots, this.leaderRobot);
+
     // Clear signal overlaps
-    this.robots.forEach((robot) => {
+    robots.forEach((robot) => {
       robot.clearRobotsWithinSignalRange();
     });
 
     // Search for signal overlaps
-    const indices = Array.from(Array(this.robots.length).keys());
+    const indices = Array.from(Array(robots.length).keys());
     const combinationOfIndices = combinations(indices, 2, 2);
     combinationOfIndices.forEach(([first, second]) => {
-      const firstRobot = this.robots[first];
-      const secondRobot = this.robots[second];
+      const firstRobot = robots[first];
+      const secondRobot = robots[second];
       if (firstRobot.getSignal().isSignalWithinRange(secondRobot.getSignal())) {
         firstRobot.addRobotIdToSignalRange(secondRobot.getId());
         secondRobot.addRobotIdToSignalRange(firstRobot.getId());
       }
     });
+  };
+
+  public getLeaderRobot = () => {
+    return this.leaderRobot;
   };
 }
