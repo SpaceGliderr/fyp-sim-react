@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CanvasProp } from "./props";
 import { CanvasHelper } from "../../utils/canvas";
-import { Simulator } from "../../game";
+import { Simulator, SimulatorAction } from "../../game";
 import { Map } from "../../game/map";
 import {
   GOAL_SPAWN_RATE,
@@ -14,6 +14,7 @@ import { SpawnerWorkerResponse } from "../../typings/spawner-worker";
 import { Point } from "../../utils/coordinates";
 import {
   executeBatchAlgorithm,
+  executeGenerateMap,
   executeInitializeMapJSON,
 } from "../../public/api/algorithm";
 
@@ -29,6 +30,9 @@ const Canvas = (props: CanvasProp) => {
   const [spawnerWorker, setSpawnerWorker] = useState<Worker | undefined>(
     undefined
   );
+  const [simulatorAction, setSimulatorAction] = useState<SimulatorAction>(
+    SimulatorAction.NAVIGATION
+  ); // First simulator action state is MAPPING procedure
 
   // Initialize map json data
   const response = executeInitializeMapJSON(simulator.generatePayload());
@@ -116,20 +120,22 @@ const Canvas = (props: CanvasProp) => {
 
   // ========================= SPAWNER WORKER =========================
   useEffect(() => {
-    const ticker = setInterval(() => {
-      if (!spawnerWorker) {
-        setSpawnerWorker(
-          new Worker("./workers/spawner.js", { type: "module" })
-        );
-      } else {
-        spawnerWorker.postMessage(
-          JSON.stringify({ simulator, duration: GOAL_TIMER_DURATION })
-        );
-      }
-    }, GOAL_SPAWN_RATE);
+    if (simulatorAction === SimulatorAction.NAVIGATION) {
+      const ticker = setInterval(() => {
+        if (!spawnerWorker) {
+          setSpawnerWorker(
+            new Worker("./workers/spawner.js", { type: "module" })
+          );
+        } else {
+          spawnerWorker.postMessage(
+            JSON.stringify({ simulator, duration: GOAL_TIMER_DURATION })
+          );
+        }
+      }, GOAL_SPAWN_RATE);
 
-    return () => clearInterval(ticker);
-  }, [spawnerWorker, simulator]);
+      return () => clearInterval(ticker);
+    }
+  }, [spawnerWorker, simulator, simulatorAction]);
 
   useEffect(() => {
     if (spawnerWorker) {
@@ -150,6 +156,33 @@ const Canvas = (props: CanvasProp) => {
       };
     }
   }, [spawnerWorker, simulator]);
+
+  // ========================= SIMULATOR ACTIONS =========================
+  useEffect(() => {
+    switch (simulator.getAction()) {
+      case SimulatorAction.MAPPING:
+        setSimulatorAction(SimulatorAction.NAVIGATION);
+        break;
+
+      case SimulatorAction.MAPPING_COMPLETE:
+        setSimulatorAction(SimulatorAction.MAPPING_COMPLETE);
+        break;
+
+      case SimulatorAction.NAVIGATION:
+        setSimulatorAction(SimulatorAction.MAPPING);
+        break;
+
+      default:
+        break;
+    }
+  }, [simulator]);
+
+  useEffect(() => {
+    if (simulatorAction === SimulatorAction.MAPPING_COMPLETE) {
+      const response = executeGenerateMap({});
+      response.then(() => simulator.mapGenerated());
+    }
+  }, [simulatorAction, simulator]);
 
   return (
     <div>
