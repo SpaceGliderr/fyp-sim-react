@@ -67,3 +67,8 @@ def initialize_map_json(algorithm: _Algorithm):
         print(e)
         return str(e)
     return "successfully initialized map json"
+
+
+@app.post("/generate_map/")
+def generate_map():
+    pass
