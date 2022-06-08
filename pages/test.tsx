@@ -11,8 +11,6 @@ const Test: NextPage = () => {
   // Instantiate the simulator class based on the chosen map
   const simulator = useMemo(() => new Simulator(map), [map]);
 
-  // console.log(JSON.stringify(simulator.generatePayload()));
-
   const [res, setRes] = useState<string>("Default");
 
   // const executeAlgorithm = async () => {
