@@ -54,3 +54,5 @@ export const SIGNAL_CIRCLE_COLOR_RGB = [247, 185, 156];
 export const SIGNAL_CIRCLE_OPACITY = 0.2;
 
 export const GOAL_TIMER_DURATION = 40; // in seconds
+
+export const LEADER_ROBOT_COLOR = "#cfe39f";
