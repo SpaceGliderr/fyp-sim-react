@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CanvasProp } from "./props";
 import { CanvasHelper } from "../../utils/canvas";
-import { Simulator } from "../../game";
+import { Simulator, SimulatorAction } from "../../game";
 import { Map } from "../../game/map";
 import {
   GOAL_SPAWN_RATE,
@@ -14,6 +14,7 @@ import { SpawnerWorkerResponse } from "../../typings/spawner-worker";
 import { Point } from "../../utils/coordinates";
 import {
   executeBatchAlgorithm,
+  executeGenerateMap,
   executeInitializeMapJSON,
 } from "../../public/api/algorithm";
 
@@ -29,10 +30,24 @@ const Canvas = (props: CanvasProp) => {
   const [spawnerWorker, setSpawnerWorker] = useState<Worker | undefined>(
     undefined
   );
+  const [simulatorAction, setSimulatorAction] = useState<SimulatorAction>(
+    SimulatorAction.MAPPING
+  ); // First simulator action state is MAPPING procedure
+  const [currentRobotId, setCurrentRobotId] = useState<number>(0); // Current robot id that is being controlled
 
   // Initialize map json data
-  const response = executeInitializeMapJSON(simulator.generatePayload());
-  response.then((res) => console.log(res));
+  // TODO: Refactor this part
+  // const response = executeInitializeMapJSON(simulator.generatePayload());
+  // response.then((res) => console.log(res));
+
+  // const nextRobotId = useCallback(() => {
+  //   setCurrentRobotId((currentRobotId) => {
+  //     if (currentRobotId + 1 === simulator.getRobots().length) {
+  //       return 0;
+  //     }
+  //     return currentRobotId + 1;
+  //   });
+  // }, [simulator]);
 
   // ========================= ENVIRONMENT RENDERING =========================
   // Declare canvas references
@@ -90,6 +105,11 @@ const Canvas = (props: CanvasProp) => {
       // Check for robot goals
       simulator.checkRobotGoals();
 
+      // Check for mapping
+      if (simulatorAction === SimulatorAction.MAPPING) {
+        simulator.mapping();
+      }
+
       // Execute algorithm
       // TODO: Uncomment once it is debugged
       // const response = executeBatchAlgorithm(simulator.generatePayload());
@@ -97,12 +117,15 @@ const Canvas = (props: CanvasProp) => {
       // response.then((res) => simulator.execute(res)).catch(() => {});
 
       robots[0].drive(10, 0);
+
+      // nextRobotId();
+
       // robots[1].drive(5, 5);
     }, TICKS_PER_UPDATE);
 
     // Unmount ticker
     return () => clearInterval(ticker);
-  }, [simulator]);
+  }, [simulator, simulatorAction]);
 
   // This useEffect hook will act as the sensor reading loop for the robots
   useEffect(() => {
@@ -116,20 +139,22 @@ const Canvas = (props: CanvasProp) => {
 
   // ========================= SPAWNER WORKER =========================
   useEffect(() => {
-    const ticker = setInterval(() => {
-      if (!spawnerWorker) {
-        setSpawnerWorker(
-          new Worker("./workers/spawner.js", { type: "module" })
-        );
-      } else {
-        spawnerWorker.postMessage(
-          JSON.stringify({ simulator, duration: GOAL_TIMER_DURATION })
-        );
-      }
-    }, GOAL_SPAWN_RATE);
+    if (simulatorAction === SimulatorAction.NAVIGATION) {
+      const ticker = setInterval(() => {
+        if (!spawnerWorker) {
+          setSpawnerWorker(
+            new Worker("./workers/spawner.js", { type: "module" })
+          );
+        } else {
+          spawnerWorker.postMessage(
+            JSON.stringify({ simulator, duration: GOAL_TIMER_DURATION })
+          );
+        }
+      }, GOAL_SPAWN_RATE);
 
-    return () => clearInterval(ticker);
-  }, [spawnerWorker, simulator]);
+      return () => clearInterval(ticker);
+    }
+  }, [spawnerWorker, simulator, simulatorAction]);
 
   useEffect(() => {
     if (spawnerWorker) {
@@ -150,6 +175,34 @@ const Canvas = (props: CanvasProp) => {
       };
     }
   }, [spawnerWorker, simulator]);
+
+  // ========================= SIMULATOR ACTIONS =========================
+  useEffect(() => {
+    switch (simulator.getAction()) {
+      case SimulatorAction.MAPPING:
+        setSimulatorAction(SimulatorAction.MAPPING);
+        break;
+
+      case SimulatorAction.MAPPING_COMPLETE:
+        setSimulatorAction(SimulatorAction.MAPPING_COMPLETE);
+        break;
+
+      case SimulatorAction.NAVIGATION:
+        setSimulatorAction(SimulatorAction.NAVIGATION);
+        break;
+
+      default:
+        break;
+    }
+  }, [simulator]);
+
+  useEffect(() => {
+    if (simulatorAction === SimulatorAction.MAPPING_COMPLETE) {
+      // Navigate to leader robot position
+      const response = executeGenerateMap({});
+      response.then(() => simulator.mapGenerated());
+    }
+  }, [simulatorAction, simulator]);
 
   return (
     <div>

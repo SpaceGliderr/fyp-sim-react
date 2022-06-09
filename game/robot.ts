@@ -12,6 +12,7 @@ import {
   MAX_WHEEL_DRIVE_RATES,
   PIXEL_TO_CM_RATIO,
   ROBOT_COLOR,
+  ROBOT_FONT_SETTINGS,
   ROBOT_HEADING_COLOR,
   ROBOT_RADIUS,
   SIGNAL_CIRCLE_COLOR_RGB,
@@ -27,6 +28,8 @@ export enum RobotStatus {
   PROCESSING = "PROCESSING", // When the robot is processing data
   TRANSIT = "TRANSIT", // When the robot is moving from point A to point B
   COLLISION = "COLLISION", // When the robot is in collision with an obstacle
+  MAPPING = "MAPPING", // When the robot is mapping
+  MAPPING_COMPLETE = "MAPPING_COMPLETE", // When the robot has completed mapping
 }
 
 export type RobotPIDMetadata = {
@@ -52,6 +55,15 @@ export type ActivityHistory = {
   goal: Goal;
 };
 
+export type RobotConstructorArgs = {
+  vector: Vector;
+  id: number;
+  leader: boolean;
+  mappingGoals: Goal[];
+  regionDetails?: { regionNumber: number; regionPoints: Point[] };
+  goal?: Goal;
+};
+
 export class Robot extends CircleObstacle {
   public static readonly RADIUS = ROBOT_RADIUS * PIXEL_TO_CM_RATIO;
   // public static readonly COLOR = ROBOT_COLOR;
@@ -73,11 +85,15 @@ export class Robot extends CircleObstacle {
   private regionPoints?: Point[];
   private previousPose: Pose;
   private robotColor: string;
+  private mappingGoals: Goal[];
+  private sensorReadings: Point[][] = [];
+  private leader: boolean = false;
 
   constructor(
     vector: Vector,
     id: number,
     leader: boolean,
+    mappingGoals: Goal[],
     regionDetails?: { regionNumber: number; regionPoints: Point[] },
     goal?: Goal
   ) {
@@ -104,6 +120,8 @@ export class Robot extends CircleObstacle {
     this.regionPoints = regionDetails?.regionPoints;
     this.previousPose = this.pose;
     this.robotColor = leader ? LEADER_ROBOT_COLOR : ROBOT_COLOR;
+    this.mappingGoals = mappingGoals;
+    this.leader = leader;
   }
 
   public setPIDMetadata = (metadata: RobotPIDMetadata) => {
@@ -181,6 +199,21 @@ export class Robot extends CircleObstacle {
       isStatic
     );
 
+    if (this.leader) {
+      // Change text offsets to make it look better
+    }
+
+    CanvasHelper.drawText(
+      this.getPoint(),
+      this.id.toString(),
+      -3.5,
+      4.5,
+      {
+        fontSettings: ROBOT_FONT_SETTINGS,
+      },
+      isStatic
+    );
+
     // Render robot sensor
     this.irSensors.forEach((sensor) => {
       sensor.render();
@@ -212,6 +245,8 @@ export class Robot extends CircleObstacle {
     this.usSensors.forEach((sensor) => {
       sensor.measure(obstacles, robots, this.id);
     });
+
+    this.sensorReadings.push(this.getAllSensorReadings());
   };
 
   // Moves using differential drive mechanics
@@ -270,6 +305,37 @@ export class Robot extends CircleObstacle {
     return null;
   };
 
+  public mappingGoalReached = () => {
+    const newMappingGoals = this.mappingGoals;
+    const removedMappingGoal = newMappingGoals.shift();
+    this.mappingGoals = newMappingGoals;
+
+    removedMappingGoal?.setStatusToReached();
+
+    if (removedMappingGoal) {
+      this.activityHistory.push({
+        goal: removedMappingGoal,
+        timeTaken: removedMappingGoal.getTimeTaken(),
+      });
+    }
+
+    if (this.mappingGoals.length === 0) {
+      this.setStatus(RobotStatus.MAPPING_COMPLETE);
+    }
+
+    return { id: this.id, removedMappingGoal };
+  };
+
+  public checkMappingGoal = () => {
+    if (
+      this.mappingGoals.length > 0 &&
+      this.mappingGoals[0]?.checkForCollisionWithRobot(this)
+    ) {
+      return this.mappingGoalReached();
+    }
+    return null;
+  };
+
   public setCurrentGoal = (currentGoal: Goal) => {
     this.currentGoal = currentGoal;
   };
@@ -321,6 +387,17 @@ export class Robot extends CircleObstacle {
     };
   };
 
+  public getAllSensorReadings = () => {
+    return filter(
+      map(concat(this.irSensors, this.usSensors), (sensor) => {
+        return sensor.getReading();
+      }),
+      (reading) => {
+        return reading !== null;
+      }
+    ) as Point[];
+  };
+
   public execute = (algorithmPayload: AlgorithmPayload) => {
     const { type, payload } = algorithmPayload;
 
@@ -367,4 +444,20 @@ export class Robot extends CircleObstacle {
   public isWithinLeaderRobotRange = () => {
     return includes(this.robotsWithinSignalRange, -1);
   };
+}
+
+export class LeaderRobot extends Robot {
+  private numberOfRegions: number;
+  private regions: Point[][];
+
+  constructor(
+    robot: RobotConstructorArgs,
+    numberOfRegions: number,
+    regions: Point[][]
+  ) {
+    const { vector, id, leader, regionDetails, goal } = robot;
+    super(vector, id, leader, [], regionDetails, goal);
+    this.numberOfRegions = numberOfRegions;
+    this.regions = regions;
+  }
 }

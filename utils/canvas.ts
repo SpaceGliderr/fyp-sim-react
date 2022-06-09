@@ -1,3 +1,7 @@
+import {
+  DEFAULT_FONT_FILL_STYLE,
+  DEFAULT_FONT_SETTINGS,
+} from "../game/settings";
 import { Line, Point } from "./coordinates";
 
 export class CanvasHelper {
@@ -119,5 +123,26 @@ export class CanvasHelper {
       ctx.fillStyle = fill;
       ctx.fill();
     }
+  };
+
+  public static drawText = (
+    point: Point,
+    text: string,
+    xOffset: number,
+    yOffset: number,
+    fontDetails?: {
+      fontSettings?: string;
+      fillStyle?: string;
+    },
+    isStatic: boolean = false
+  ) => {
+    const ctx: CanvasRenderingContext2D = isStatic
+      ? this.staticCtx
+      : this.dynamicCtx;
+
+    const { x, y } = point.unpack();
+    ctx.font = fontDetails?.fontSettings ?? DEFAULT_FONT_SETTINGS;
+    ctx.fillStyle = fontDetails?.fillStyle ?? DEFAULT_FONT_FILL_STYLE;
+    ctx.fillText(text, x + xOffset, y + yOffset);
   };
 }
