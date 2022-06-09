@@ -12,6 +12,7 @@ import {
   MAX_WHEEL_DRIVE_RATES,
   PIXEL_TO_CM_RATIO,
   ROBOT_COLOR,
+  ROBOT_FONT_SETTINGS,
   ROBOT_HEADING_COLOR,
   ROBOT_RADIUS,
   SIGNAL_CIRCLE_COLOR_RGB,
@@ -86,6 +87,7 @@ export class Robot extends CircleObstacle {
   private robotColor: string;
   private mappingGoals: Goal[];
   private sensorReadings: Point[][] = [];
+  private leader: boolean = false;
 
   constructor(
     vector: Vector,
@@ -119,6 +121,7 @@ export class Robot extends CircleObstacle {
     this.previousPose = this.pose;
     this.robotColor = leader ? LEADER_ROBOT_COLOR : ROBOT_COLOR;
     this.mappingGoals = mappingGoals;
+    this.leader = leader;
   }
 
   public setPIDMetadata = (metadata: RobotPIDMetadata) => {
@@ -193,6 +196,21 @@ export class Robot extends CircleObstacle {
         MathHelper.calcEndPoint(this.pose, Robot.RADIUS)
       ),
       Robot.HEADING_COLOR,
+      isStatic
+    );
+
+    if (this.leader) {
+      // Change text offsets to make it look better
+    }
+
+    CanvasHelper.drawText(
+      this.getPoint(),
+      this.id.toString(),
+      -3.5,
+      4.5,
+      {
+        fontSettings: ROBOT_FONT_SETTINGS,
+      },
       isStatic
     );
 

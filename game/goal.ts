@@ -1,3 +1,4 @@
+import { CanvasHelper } from "../utils/canvas";
 import { Collision } from "../utils/collision";
 import { Point } from "../utils/coordinates";
 import { GeneralUtils } from "../utils/general";
@@ -45,6 +46,7 @@ export class Goal {
 
   public render = () => {
     this.obstacle.render();
+    CanvasHelper.drawText(this.point[0], this.robotId.toString(), -2.75, 3);
   };
 
   public unpack = () => {
