@@ -56,3 +56,9 @@ export const SIGNAL_CIRCLE_OPACITY = 0.2;
 export const GOAL_TIMER_DURATION = 40; // in seconds
 
 export const LEADER_ROBOT_COLOR = "#cfe39f";
+
+export const DEFAULT_FONT_SETTINGS = "10px Arial";
+
+export const DEFAULT_FONT_FILL_STYLE = "black";
+
+export const ROBOT_FONT_SETTINGS = "14px Arial";
