@@ -280,6 +280,12 @@ export class Simulator {
   };
 
   public mapping = () => {
+    this.mappingGoals.forEach(({ goals }) => {
+      goals.forEach((goal) => {
+        goal.render();
+      });
+    });
+
     this.checkRobotMappingGoals();
 
     if (this.mappingGoals.length === 0) {
