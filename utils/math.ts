@@ -13,6 +13,7 @@ export class MathHelper {
   public static calcEndPoint = (pose: Pose, distance: number) => {
     const { x, y, theta } = pose.unpack();
 
+    // The angle is inverted because here is using + instead of y - distance
     return new Point(
       distance * Math.cos(theta) + x,
       distance * Math.sin(theta) + y
