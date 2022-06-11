@@ -43,7 +43,7 @@ export const WHEEL_BASE_LENGTH_IN_PX =
 
 export const DIFFERENCE_IN_TIME = UPDATES_PER_SECOND / 1000;
 
-export const MAX_WHEEL_DRIVE_RATES = 18; // in rad/s
+export const MAX_WHEEL_DRIVE_RATES = 19; // in rad/s
 
 export const SIGNAL_RADIUS_IN_CM = 100; // in cm
 
