@@ -1,5 +1,6 @@
 import json
 from posixpath import dirname
+from typing import List
 from src.api_models import _Robot
 from models.point import Point
 from models.pose import Pose
@@ -34,7 +35,13 @@ def transform_robot_api_model(robot: _Robot):
         current_goal: Point = Point(robot.current_goal.x, robot.current_goal.y)
     else:
         current_goal = None
-    return robot.id, pose, robot.sensor_readings, current_goal, robot.pid_metadata
+    
+    mapping_goals: List[Point] = []
+    if (len(robot.mapping_goals) > 0):
+        for goal in robot.mapping_goals:
+            mapping_goals.append(Point(goal.x, goal.y))
+    
+    return robot.id, pose, robot.sensor_readings, current_goal, robot.pid_metadata, robot.robots_within_signal_range, mapping_goals, robot.status
 
 
 def clear_map_json():    

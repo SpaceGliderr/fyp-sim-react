@@ -1,4 +1,5 @@
 import { concat, filter, includes, indexOf, isEmpty, map, min } from "lodash";
+import { SimulatorAction } from ".";
 import { CanvasHelper } from "../utils/canvas";
 import { Line, Point, Pose, Vector } from "../utils/coordinates";
 import { MathHelper } from "../utils/math";
@@ -71,7 +72,7 @@ export class Robot extends CircleObstacle {
   private pose: Pose;
   private irSensors: IRSensor[];
   private usSensors: USSensor[];
-  private status: RobotStatus = RobotStatus.IDLE;
+  private status: RobotStatus = RobotStatus.MAPPING; // TODO: Change this back to IDLE once debugging is done with mapping
   private currentGoal: Goal | undefined = undefined; // A robot's current goal can be undefined
   private activityHistory: ActivityHistory[] = [];
   private id: number;
@@ -323,6 +324,8 @@ export class Robot extends CircleObstacle {
       this.setStatus(RobotStatus.MAPPING_COMPLETE);
     }
 
+    this.resetPidMetadata();
+
     return { id: this.id, removedMappingGoal };
   };
 
@@ -368,23 +371,24 @@ export class Robot extends CircleObstacle {
       }
     );
     const closestGoalPoint = this.getClosestGoalPoint();
-    if (closestGoalPoint) {
-      return {
-        id: this.id,
-        pose: this.pose,
-        current_goal: closestGoalPoint,
-        sensor_readings,
-        pid_metadata: this.pidMetadata,
-        robots_within_signal_range: this.robotsWithinSignalRange,
-      };
-    }
-    return {
+    const payload = {
       id: this.id,
       pose: this.pose,
       sensor_readings,
       pid_metadata: this.pidMetadata,
       robots_within_signal_range: this.robotsWithinSignalRange,
+      mapping_goals: this.mappingGoals.map((goal) => {
+        return goal.getPoints()[0];
+      }),
+      status: this.status,
     };
+    if (closestGoalPoint) {
+      return {
+        current_goal: closestGoalPoint,
+        ...payload,
+      };
+    }
+    return payload;
   };
 
   public getAllSensorReadings = () => {
@@ -443,6 +447,28 @@ export class Robot extends CircleObstacle {
 
   public isWithinLeaderRobotRange = () => {
     return includes(this.robotsWithinSignalRange, -1);
+  };
+
+  public setStatusOnSimAction = (action: SimulatorAction) => {
+    switch (action) {
+      case SimulatorAction.MAPPING:
+        this.setStatus(RobotStatus.MAPPING);
+        break;
+
+      case SimulatorAction.MAPPING_COMPLETE:
+        this.setStatus(RobotStatus.IDLE);
+        break;
+
+      default:
+        break;
+    }
+  };
+
+  public resetPidMetadata = () => {
+    this.pidMetadata = {
+      prev_eP: 0,
+      prev_eI: 0,
+    };
   };
 }
 
