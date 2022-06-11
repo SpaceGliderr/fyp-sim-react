@@ -44,7 +44,7 @@ def algorithm(algorithm: _Algorithm):
 def single_robot(robot: _Robot):
     print("Robot \n", robot)
     decision = Arbiter(robot)
-    return decision
+    return decision.decide()
 
 
 @app.post("/clear_map_json/")
