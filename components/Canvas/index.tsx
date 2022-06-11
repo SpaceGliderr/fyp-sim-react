@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CanvasProp } from "./props";
 import { CanvasHelper } from "../../utils/canvas";
 import { Simulator, SimulatorAction } from "../../game";
@@ -16,6 +16,7 @@ import {
   executeBatchAlgorithm,
   executeGenerateMap,
   executeInitializeMapJSON,
+  executeSingleRobot,
 } from "../../public/api/algorithm";
 
 const Canvas = (props: CanvasProp) => {
@@ -86,8 +87,6 @@ const Canvas = (props: CanvasProp) => {
   // ========================= COMPONENT RENDERING =========================
   // This useEffect hook will act as the refresh loop for moving objects on the dynamic canvas
   useEffect(() => {
-    const robots = simulator.getRobots();
-
     // Set the ticker here
     const ticker = setInterval(() => {
       // Clear the dynamic canvas before rendering the new frame
@@ -100,6 +99,7 @@ const Canvas = (props: CanvasProp) => {
       simulator.renderRobots();
 
       // Check for collisions
+      // TODO: Enable this when the motion model is fixed
       simulator.checkForCollisions();
 
       // Check for robot goals
@@ -116,11 +116,16 @@ const Canvas = (props: CanvasProp) => {
 
       // response.then((res) => simulator.execute(res)).catch(() => {});
 
-      robots[0].drive(10, 0);
+      const response = executeSingleRobot(
+        simulator.getRobots()[0].generatePayload()
+      );
 
-      // nextRobotId();
-
-      // robots[1].drive(5, 5);
+      response
+        .then((res) => {
+          simulator.getRobots()[0].execute(res);
+          // console.log(res);
+        })
+        .catch(() => {});
     }, TICKS_PER_UPDATE);
 
     // Unmount ticker
