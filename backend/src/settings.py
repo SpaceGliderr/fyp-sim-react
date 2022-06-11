@@ -9,4 +9,6 @@ WHEEL_BASE_LENGTH_IN_M = 0.0885;
 WHEEL_BASE_LENGTH_IN_PX = WHEEL_BASE_LENGTH_IN_M * PIXEL_TO_CM_RATIO;
 
 # TODO: Fix translational velocity, the velocity for the robot is not this high
-MAX_TRANSLATIONAL_VELOCITY = 0.813; # in m/s
+MAX_TRANSLATIONAL_VELOCITY = 0.4; # in m/s
+
+MAX_ANGULAR_VELOCITY = 2.2763;
