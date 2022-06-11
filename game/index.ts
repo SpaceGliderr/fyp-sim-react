@@ -275,8 +275,12 @@ export class Simulator {
     return this.leaderRobot;
   };
 
-  public setActionToNavigation = () => {
-    this.action = SimulatorAction.NAVIGATION;
+  public setAction = (action: SimulatorAction) => {
+    this.action = action;
+
+    this.robots.forEach((robot) => {
+      robot.setStatusOnSimAction(action);
+    });
   };
 
   public mapping = () => {
@@ -289,12 +293,12 @@ export class Simulator {
     this.checkRobotMappingGoals();
 
     if (this.mappingGoals.length === 0) {
-      this.action = SimulatorAction.MAPPING_COMPLETE;
+      this.setAction(SimulatorAction.MAPPING_COMPLETE);
     }
   };
 
   public mapGenerated = () => {
-    this.action = SimulatorAction.NAVIGATION;
+    this.setAction(SimulatorAction.NAVIGATION);
   };
 
   public getAction = () => {
