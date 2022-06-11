@@ -2,7 +2,7 @@ from math import cos, sin
 from models.point import Point
 
 class Pose:
-    def __init__(self, point, theta: float) -> None:
+    def __init__(self, point: Point, theta: float) -> None:
         self.point = point
         self.theta = theta
 
@@ -10,7 +10,7 @@ class Pose:
     def inverse(self):
         """Returns the inverse of the pose."""
         inverse_pose = Pose(Point(-self.point.x, -self.point.y), -self.theta)
-        result_point = self.rotate_vector(inverse_pose)
+        result_point = inverse_pose.rotate()
         return Pose(result_point, -self.theta)
 
 
@@ -24,14 +24,6 @@ class Pose:
         rotatedY = x * sin(self.theta) + y * cos(self.theta)
         
         return Point(rotatedX, rotatedY)
-
-
-    def rotate_and_translate(self, vector: Point):
-        """
-        Rotate and translate a vector by theta radians
-        """
-        rotatedPoint = self.rotate()
-        return rotatedPoint.add(vector)
 
     
     def unpack(self):
