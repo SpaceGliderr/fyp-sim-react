@@ -26,6 +26,8 @@ class _Robot(BaseModel):
     id: int
     pose: _Pose
     sensor_readings: List[_SensorReading]
+    mapping_goals: List[_Point] # list of goals for the robot to map
+    status: str
     current_goal: _Point = None # optional, a robot can not have a goal at a given time
     pid_metadata: _PIDMetadata # optional, pid metadata for the robot
     robots_within_signal_range: List[int] # optional, list of robots within signal range of the robot
