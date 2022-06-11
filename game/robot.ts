@@ -100,6 +100,8 @@ export class Robot extends CircleObstacle {
   ) {
     super(vector, Robot.RADIUS);
     this.pose = new Pose(vector, MathHelper.degToRad(Math.random() * 360)); // Spawn heading is random
+    // this.pose = new Pose(vector, 1.5708);
+    // console.log("Robot theta: ", MathHelper.radToDeg(1.5708));
     this.irSensors = leader
       ? []
       : IR_SENSOR_LOCS.map((loc) => {
@@ -252,8 +254,11 @@ export class Robot extends CircleObstacle {
 
   // Moves using differential drive mechanics
   public drive = (dL: number, dR: number) => {
-    const driveRateL = Math.min(dL, MAX_WHEEL_DRIVE_RATES);
-    const driveRateR = Math.min(dR, MAX_WHEEL_DRIVE_RATES);
+    let driveRateL = Math.min(dL, MAX_WHEEL_DRIVE_RATES);
+    let driveRateR = Math.min(dR, MAX_WHEEL_DRIVE_RATES);
+
+    driveRateL = Math.max(driveRateL, -MAX_WHEEL_DRIVE_RATES);
+    driveRateR = Math.max(driveRateR, -MAX_WHEEL_DRIVE_RATES);
 
     const dThetaL = driveRateL * DIFFERENCE_IN_TIME;
     const dThetaR = driveRateR * DIFFERENCE_IN_TIME;
@@ -269,7 +274,7 @@ export class Robot extends CircleObstacle {
       this.pose.getPoint().getY() + dCenter * Math.sin(this.pose.getTheta());
     const newTheta =
       this.pose.getTheta() +
-      (dLeftWheel - dRightWheel) / WHEEL_BASE_LENGTH_IN_PX;
+      (dRightWheel - dLeftWheel) / WHEEL_BASE_LENGTH_IN_PX;
 
     this.setPose(new Pose(new Vector(newX, newY), newTheta));
   };
