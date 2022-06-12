@@ -31,6 +31,13 @@ export enum RobotStatus {
   COLLISION = "COLLISION", // When the robot is in collision with an obstacle
   MAPPING = "MAPPING", // When the robot is mapping
   MAPPING_COMPLETE = "MAPPING_COMPLETE", // When the robot has completed mapping
+  FIND_LEADER = "FIND_LEADER", // When the robot is finding the leader
+}
+
+export enum RobotControllers {
+  GO_TO_GOAL = "GO_TO_GOAL",
+  AVOID_OBSTACLES = "AVOID_OBSTACLES",
+  FOLLOW_WALL = "FOLLOW_WALL",
 }
 
 export type RobotPIDMetadata = {
@@ -89,6 +96,7 @@ export class Robot extends CircleObstacle {
   private mappingGoals: Goal[];
   private sensorReadings: Point[][] = [];
   private leader: boolean = false;
+  private currentController: RobotControllers = RobotControllers.GO_TO_GOAL;
 
   constructor(
     vector: Vector,
@@ -386,6 +394,7 @@ export class Robot extends CircleObstacle {
         return goal.getPoints()[0];
       }),
       status: this.status,
+      current_controller: this.currentController,
     };
     if (closestGoalPoint) {
       return {
@@ -417,6 +426,7 @@ export class Robot extends CircleObstacle {
         const { steering_input, pid_metadata } = payload as GoToGoalPayload;
         this.drive(steering_input[0], steering_input[1]);
         this.setPIDMetadata(pid_metadata);
+        this.setCurrentController(RobotControllers.GO_TO_GOAL);
         break;
 
       case 2: // Follow wall behavior
@@ -474,6 +484,10 @@ export class Robot extends CircleObstacle {
       prev_eP: 0,
       prev_eI: 0,
     };
+  };
+
+  public setCurrentController = (controller: RobotControllers) => {
+    this.currentController = controller;
   };
 }
 

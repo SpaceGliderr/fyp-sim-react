@@ -31,6 +31,7 @@ class _Robot(BaseModel):
     current_goal: _Point = None # optional, a robot can not have a goal at a given time
     pid_metadata: _PIDMetadata # optional, pid metadata for the robot
     robots_within_signal_range: List[int] # optional, list of robots within signal range of the robot
+    current_controller: str # optional, current controller of the robot
 
 
 class _TopologicalEnvironment(BaseModel):
