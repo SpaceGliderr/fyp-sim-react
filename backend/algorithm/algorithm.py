@@ -16,6 +16,6 @@ class BaseAlgorithm:
         # Pass the robot into the arbiter class to make the decision for the robot.
         for robot in self.robots:
             arbiter = Arbiter(robot)
-            decisions.append(arbiter.decide())
+            decisions.append(arbiter.execute())
 
         return decisions
