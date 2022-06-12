@@ -62,3 +62,15 @@ class GoToGoal:
         inverse_pose = self.pose.inverse()
         print("INVERSE_POSE >>> ", inverse_pose.point.x, inverse_pose.point.y, inverse_pose.theta)
         return self.goal.rotate_and_translate(inverse_pose.point, inverse_pose.theta)
+
+
+    def reset_pid(self):
+        """Resets the PID controller."""
+        self.prev_eP = 0.0
+        self.prev_eI = 0.0
+
+    
+    def update_goal(self, goal: Point):
+        """Updates the goal of the robot."""
+        self.goal = goal
+        self.heading_vector = self.calculate_heading_vector()
