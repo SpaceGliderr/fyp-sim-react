@@ -1,10 +1,37 @@
+import numpy as np
+
+
 from algorithm.controllers.navigation.go_to_goal import GoToGoal
 from algorithm.controllers.mapping.mapping import Mapping
+from algorithm.controllers.navigation.avoid_obstacles import AvoidObstacles
+from algorithm.controllers.navigation.follow_wall import FollowWall
+from models.point import Point
 from src.api_models import _TopologicalEnvironment
 from src.api_models import _PayloadTypes
 from models.robot import Robot
 from src.utils import transform_robot_api_model
 from src.api_models import _Robot
+from enum import Enum
+
+
+class ControllerType(Enum):
+    GO_TO_GOAL = 1
+    AVOID_OBSTACLES = 2
+    FOLLOW_WALL = 3
+
+
+controller_type_dictionary = {
+    "GO_TO_GOAL": ControllerType.GO_TO_GOAL,
+    "AVOID_OBSTACLES": ControllerType.AVOID_OBSTACLES,
+    "FOLLOW_WALL": ControllerType.FOLLOW_WALL
+}
+
+payload_type_dictionary = {
+    "GO_TO_GOAL": _PayloadTypes.gtg,
+    "AVOID_OBSTACLES": _PayloadTypes.ao,
+    "FOLLOW_WALL": _PayloadTypes.fw,
+}
+
 
 
 # The arbiter class is a decision making class that decides the next move for the robot.
@@ -14,42 +41,100 @@ class Arbiter:
         self.robot = Robot(id, pose, sensor_readings, mapping_goals, status, current_goal, pid_metadata, robots_within_signal_range)
         self.mapping = Mapping()
 
+        # Declare the controllers
+        self.go_to_goal = GoToGoal(self.robot.pose, Point(1.0, 0.0), self.robot.pid_metadata)
+        self.avoid_obstacle = AvoidObstacles(self.robot.pose, self.robot.pid_metadata, self.robot.sensor_readings)
+        self.follow_wall = FollowWall(self.robot.pose, self.robot.pid_metadata, self.robot.sensor_readings)
 
-    def decide(self) -> None:
-        payload = {
+        # Current controller
+        self.controller = self.go_to_goal
+
+        # Previous controller
+        self.previous_controller = controller_type_dictionary[robot.current_controller]
+
+        # Controller instance dictionary
+        self.controller_instances = {
+            ControllerType.GO_TO_GOAL: self.go_to_goal,
+            ControllerType.AVOID_OBSTACLES: self.avoid_obstacle,
+            ControllerType.FOLLOW_WALL: self.follow_wall
+        }
+
+        # Arbiter payload
+        self.payload = {
             'robot_id': self.robot.id,
             'type': None,
             'payload': None,
         }
 
-        # self.mapping.update_robot_readings(self.robot.id, self.robot.sensor_readings)
-        print("STATUS STUFF >>> ", self.robot.status, self.robot.mapping_goals)
 
-        if self.robot.status == "COLLISION":
-            pass
-        
-        elif self.robot.status == "MAPPING" and len(self.robot.mapping_goals) > 0:
-            goal = self.robot.mapping_goals[0]
-            print("GOAL >>> ", goal.unpack())
-            payload['type'] = _PayloadTypes.gtg
-            controller = GoToGoal(self.robot.pose, goal, self.robot.pid_metadata)
-            steering_input, pid_metadata = controller.calculate_steering_inputs()
-            print(steering_input)
+    def update_controller(self, controller_type: ControllerType):
+        """
+        Updates the controller.
+        """
+        self.controller = self.controller_instances[controller_type]
+        self.payload['type'] = payload_type_dictionary[controller_type.name]
 
-            payload['payload'] = {
-                'steering_input': steering_input,
-                'pid_metadata': pid_metadata,
-            }
+        if controller_type is not self.previous_controller:
+            # Reset the PID to 0
+            self.controller.reset_pid()
 
+
+    def update_goal_of_controllers(self, goal: Point):
+        """
+        Updates the goal of the controllers.
+        """
+        self.go_to_goal.update_goal(goal)
+
+
+    def determine_goal(self):
+        """
+        Determines the goal for the controllers.
+        """
+        if self.robot.status == "MAPPING":
+            if len(self.robot.mapping_goals) > 0:
+                self.update_goal_of_controllers(self.robot.mapping_goals[0])
         elif self.robot.current_goal is not None:
-            payload['type'] = _PayloadTypes.gtg
-            # If the robot has a goal, then move towards the goal.
-            controller = GoToGoal(self.robot.pose, self.robot.current_goal, self.robot.pid_metadata)
-            steering_input, pid_metadata = controller.calculate_steering_inputs()
+            self.update_goal_of_controllers(self.robot.current_goal)
 
-            payload['payload'] = {
-                'steering_input': steering_input,
-                'pid_metadata': pid_metadata,
-            }
 
-        return payload
+    def determine_controller(self):
+        """
+        Determines the state of the robot, whether it is in danger or not. And adjusts the controllers accordingly.
+        """
+        if self.robot.status == "COLLISION":
+            self.update_controller(ControllerType.AVOID_OBSTACLES)
+        elif np.any(self.near_obstacle()):
+            self.update_controller(ControllerType.FOLLOW_WALL)
+        elif np.any(self.close_to_obstacle()):
+            self.update_controller(ControllerType.AVOID_OBSTACLES)
+        elif self.robot.current_goal is not None or len(self.robot.mapping_goals) > 0:
+            self.update_controller(ControllerType.GO_TO_GOAL)
+
+
+    def execute(self) -> None:
+        self.determine_goal()
+        self.determine_controller()
+        print(self.controller)
+        steering_input, pid_metadata = self.controller.calculate_steering_inputs()
+
+        self.payload['payload'] = {
+            'steering_input': steering_input,
+            'pid_metadata': pid_metadata,
+        }
+
+        return self.payload
+
+
+    # CONDITIONS
+    def near_obstacle(self):
+        """
+        Checks if the robot is near an obstacle.
+        """
+        pass
+
+
+    def close_to_obstacle(self):
+        """
+        Checks if the robot is dangerously close to an obstacle.
+        """
+        pass
