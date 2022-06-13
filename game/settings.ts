@@ -4,6 +4,8 @@ export const IR_SENSOR_LOCS = [0, 45, 90, 135, 180, 225, 270, 315];
 
 export const US_SENSOR_LOCS = [0, 45, 90, 270, 315];
 
+export const FRONT_FACING_SENSOR_LOCS = [0, 45, 315];
+
 // export const US_SENSOR_LOCS = [0];
 
 export const PIXEL_TO_CM_RATIO = 2;
