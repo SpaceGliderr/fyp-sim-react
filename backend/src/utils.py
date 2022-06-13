@@ -28,6 +28,14 @@ def uni_to_diff(velocity, omega):
     return velocityL, velocityR
 
 
+def transform_sensor_readings(sensor_readings):
+    """Transforms the sensor readings to a list of points"""
+    points: List[Point] = []
+    for sensor_reading in sensor_readings:
+        points.append(Point(sensor_reading.reading.x, sensor_reading.reading.y))
+    return points
+
+
 def transform_robot_api_model(robot: _Robot):
     """Transforms the _Robot API model to return a Robot class"""
     pose: Pose = Pose(Point(robot.pose.vector.x, robot.pose.vector.y), robot.pose.theta)
@@ -41,7 +49,7 @@ def transform_robot_api_model(robot: _Robot):
         for goal in robot.mapping_goals:
             mapping_goals.append(Point(goal.x, goal.y))
     
-    return robot.id, pose, robot.sensor_readings, current_goal, robot.pid_metadata, robot.robots_within_signal_range, mapping_goals, robot.status
+    return robot.id, pose, robot.sensor_readings, current_goal, robot.pid_metadata, robot.robots_within_signal_range, mapping_goals, robot.status, transform_sensor_readings(robot.ir_sensors)
 
 
 def clear_map_json():    
