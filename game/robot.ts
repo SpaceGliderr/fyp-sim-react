@@ -8,6 +8,7 @@ import { CircleObstacle, PolygonObstacle } from "./obstacles";
 import { IRSensor, USSensor } from "./sensor";
 import {
   DIFFERENCE_IN_TIME,
+  FRONT_FACING_SENSOR_LOCS,
   IR_SENSOR_LOCS,
   LEADER_ROBOT_COLOR,
   MAX_WHEEL_DRIVE_RATES,
@@ -45,18 +46,16 @@ export type RobotPIDMetadata = {
   prev_eI: number;
 };
 
-export interface ExecutionPayload {}
+export interface ExecutionPayload {
+  steering_input: [number, number];
+  pid_metadata: RobotPIDMetadata;
+}
 
 export type AlgorithmPayload = {
   robot_id: number;
   type: number;
   payload: ExecutionPayload;
 };
-
-export interface GoToGoalPayload extends ExecutionPayload {
-  steering_input: [number, number];
-  pid_metadata: RobotPIDMetadata;
-}
 
 export type ActivityHistory = {
   timeTaken?: number | null; // in milliseconds, null means it was a permanent goal
@@ -114,14 +113,16 @@ export class Robot extends CircleObstacle {
       ? []
       : IR_SENSOR_LOCS.map((loc) => {
           return new IRSensor(
-            new Pose(vector, MathHelper.degToRad(loc) + this.pose.getTheta())
+            new Pose(vector, MathHelper.degToRad(loc) + this.pose.getTheta()),
+            loc
           );
         });
     this.usSensors = leader
       ? []
       : US_SENSOR_LOCS.map((loc) => {
           return new USSensor(
-            new Pose(vector, MathHelper.degToRad(loc) + this.pose.getTheta())
+            new Pose(vector, MathHelper.degToRad(loc) + this.pose.getTheta()),
+            loc
           );
         });
     this.currentGoal = goal;
@@ -161,13 +162,13 @@ export class Robot extends CircleObstacle {
     this.setPoint(point);
     this.signal.setPoint(point);
 
-    // Update sensor bearings based on the new pose
     this.irSensors = IR_SENSOR_LOCS.map((loc) => {
       return new IRSensor(
         new Pose(
           this.pose.getPoint(),
           MathHelper.degToRad(loc) + this.pose.getTheta()
-        )
+        ),
+        loc
       );
     });
     this.usSensors = US_SENSOR_LOCS.map((loc) => {
@@ -175,7 +176,8 @@ export class Robot extends CircleObstacle {
         new Pose(
           this.pose.getPoint(),
           MathHelper.degToRad(loc) + this.pose.getTheta()
-        )
+        ),
+        loc
       );
     });
   };
@@ -262,14 +264,14 @@ export class Robot extends CircleObstacle {
 
   // Moves using differential drive mechanics
   public drive = (dL: number, dR: number) => {
-    let driveRateL = Math.min(dL, MAX_WHEEL_DRIVE_RATES);
-    let driveRateR = Math.min(dR, MAX_WHEEL_DRIVE_RATES);
+    // let driveRateL = Math.min(dL, MAX_WHEEL_DRIVE_RATES);
+    // let driveRateR = Math.min(dR, MAX_WHEEL_DRIVE_RATES);
 
-    driveRateL = Math.max(driveRateL, -MAX_WHEEL_DRIVE_RATES);
-    driveRateR = Math.max(driveRateR, -MAX_WHEEL_DRIVE_RATES);
+    // driveRateL = Math.max(driveRateL, -MAX_WHEEL_DRIVE_RATES);
+    // driveRateR = Math.max(driveRateR, -MAX_WHEEL_DRIVE_RATES);
 
-    const dThetaL = driveRateL * DIFFERENCE_IN_TIME;
-    const dThetaR = driveRateR * DIFFERENCE_IN_TIME;
+    const dThetaL = dL * DIFFERENCE_IN_TIME;
+    const dThetaR = dR * DIFFERENCE_IN_TIME;
 
     const wheelMetersPerRad = WHEEL_RADIUS_IN_PX;
     const dLeftWheel = dThetaL * wheelMetersPerRad;
@@ -374,6 +376,12 @@ export class Robot extends CircleObstacle {
     return this.id;
   };
 
+  public calculateDistanceOfSensorReadings = (readings: Point[]) => {
+    readings.map((reading) => {
+      return this.pose.getPoint().distanceTo(reading);
+    });
+  };
+
   public generatePayload = () => {
     const sensor_readings = filter(
       map(concat(this.irSensors, this.usSensors), (sensor) => {
@@ -383,7 +391,10 @@ export class Robot extends CircleObstacle {
         return readings.reading !== null;
       }
     );
+    const front_sensor_distances = this.getAllFrontSensorDistances();
     const closestGoalPoint = this.getClosestGoalPoint();
+    const ir_sensors = this.getIRSensors();
+
     const payload = {
       id: this.id,
       pose: this.pose,
@@ -395,6 +406,8 @@ export class Robot extends CircleObstacle {
       }),
       status: this.status,
       current_controller: this.currentController,
+      front_sensor_distances,
+      ir_sensors,
     };
     if (closestGoalPoint) {
       return {
@@ -403,6 +416,26 @@ export class Robot extends CircleObstacle {
       };
     }
     return payload;
+  };
+
+  public getIRSensors = () => {
+    return map(this.irSensors, (sensor) => {
+      // const val = {
+      //   sensor_location: sensor.getDegreeOnRobot(),
+      // };
+
+      if (sensor.getReading() !== null) {
+        return {
+          reading: sensor.getReading(),
+          // ...val,
+        };
+      } else {
+        return {
+          reading: sensor.getEmptyReading(),
+          // ...val,
+        };
+      }
+    });
   };
 
   public getAllSensorReadings = () => {
@@ -416,14 +449,28 @@ export class Robot extends CircleObstacle {
     ) as Point[];
   };
 
+  public getAllFrontSensorDistances = () => {
+    return filter(
+      map(concat(this.irSensors, this.usSensors), (sensor) => {
+        if (FRONT_FACING_SENSOR_LOCS.includes(sensor.getDegreeOnRobot())) {
+          return sensor.getDistanceOfReading();
+        }
+      }),
+      (reading) => {
+        return reading !== null && reading !== undefined;
+      }
+    ) as number[];
+  };
+
   public execute = (algorithmPayload: AlgorithmPayload) => {
     const { type, payload } = algorithmPayload;
 
     if (payload === null) return;
 
+    const { steering_input, pid_metadata } = payload as ExecutionPayload;
+
     switch (type) {
       case 1: // Go To Goal behavior
-        const { steering_input, pid_metadata } = payload as GoToGoalPayload;
         this.drive(steering_input[0], steering_input[1]);
         this.setPIDMetadata(pid_metadata);
         this.setCurrentController(RobotControllers.GO_TO_GOAL);
@@ -433,6 +480,9 @@ export class Robot extends CircleObstacle {
         break;
 
       case 3: // Avoid obstacle behavior
+        this.drive(steering_input[0], steering_input[1]);
+        this.setPIDMetadata(pid_metadata);
+        this.setCurrentController(RobotControllers.AVOID_OBSTACLES);
         break;
 
       default:
