@@ -28,6 +28,8 @@ class _Robot(BaseModel):
     sensor_readings: List[_SensorReading]
     mapping_goals: List[_Point] # list of goals for the robot to map
     status: str
+    front_sensor_distances: List[float]
+    ir_sensors: List[_SensorReading]
     current_goal: _Point = None # optional, a robot can not have a goal at a given time
     pid_metadata: _PIDMetadata # optional, pid metadata for the robot
     robots_within_signal_range: List[int] # optional, list of robots within signal range of the robot
