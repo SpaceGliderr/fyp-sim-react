@@ -37,13 +37,13 @@ payload_type_dictionary = {
 # The arbiter class is a decision making class that decides the next move for the robot.
 class Arbiter:
     def __init__(self, robot: _Robot) -> None:
-        id, pose, sensor_readings, current_goal, pid_metadata, robots_within_signal_range, mapping_goals, status = transform_robot_api_model(robot)
-        self.robot = Robot(id, pose, sensor_readings, mapping_goals, status, current_goal, pid_metadata, robots_within_signal_range)
+        id, pose, sensor_readings, current_goal, pid_metadata, robots_within_signal_range, mapping_goals, status, ir_sensors = transform_robot_api_model(robot)
+        self.robot = Robot(id, pose, sensor_readings, mapping_goals, status, ir_sensors, current_goal, pid_metadata, robots_within_signal_range)
         self.mapping = Mapping()
 
         # Declare the controllers
         self.go_to_goal = GoToGoal(self.robot.pose, Point(1.0, 0.0), self.robot.pid_metadata)
-        self.avoid_obstacle = AvoidObstacles(self.robot.pose, self.robot.pid_metadata, self.robot.sensor_readings)
+        self.avoid_obstacle = AvoidObstacles(self.robot.pose, self.robot.pid_metadata, self.robot.ir_sensors)
         self.follow_wall = FollowWall(self.robot.pose, self.robot.pid_metadata, self.robot.sensor_readings)
 
         # Current controller
@@ -108,19 +108,21 @@ class Arbiter:
         elif np.any(self.close_to_obstacle()):
             self.update_controller(ControllerType.AVOID_OBSTACLES)
         elif self.robot.current_goal is not None or len(self.robot.mapping_goals) > 0:
-            self.update_controller(ControllerType.GO_TO_GOAL)
+            self.update_controller(ControllerType.AVOID_OBSTACLES)
 
 
     def execute(self) -> None:
         self.determine_goal()
         self.determine_controller()
-        print(self.controller)
+        # print(self.controller)
         steering_input, pid_metadata = self.controller.calculate_steering_inputs()
 
         self.payload['payload'] = {
             'steering_input': steering_input,
             'pid_metadata': pid_metadata,
         }
+
+        print("Payload >>> ", self.payload)
 
         return self.payload
 
