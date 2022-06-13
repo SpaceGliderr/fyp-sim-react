@@ -12,6 +12,19 @@ class Point:
         return Point(self.x + other.x, self.y + other.y)
 
 
+    def subtract(self, other):
+        """Returns the difference of two points."""
+        return Point(self.x - other.x, self.y - other.y)
+
+
+    def scale(self, scale: float):
+        """
+        Scale a vector by a scale factor
+        """
+        x, y = self.unpack()
+        return Point(x * scale, y * scale)
+
+
     def unpack(self):
         """Returns the x, y of the point."""
         return self.x, self.y
@@ -34,5 +47,4 @@ class Point:
         Rotate and translate a vector by theta radians
         """
         rotatedPoint = self.rotate_vector(theta)
-        print("Rotated Point >>>> ", rotatedPoint.x, rotatedPoint.y)
         return rotatedPoint.add(point)
