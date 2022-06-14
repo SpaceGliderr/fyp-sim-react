@@ -31,7 +31,6 @@ class AvoidObstacles:
 
         # Calculate the error in the heading vector.
         theta_d = atan2(self.heading_vector.y, self.heading_vector.x)
-        print("Error Heading >>> ", theta_d)
         eP = theta_d
         eI = self.prev_eI + eP * dt
         eD = (eP - self.prev_eP) / dt
@@ -41,8 +40,6 @@ class AvoidObstacles:
 
         # Calculate translational velocity
         v = settings.MAX_TRANSLATIONAL_VELOCITY / (abs(w) + 1) ** 0.5
-        print("V >>> ", v)
-        print("W >>> ", w)
 
         # Store the previous error values in pid_metadata.
         pid_metadata = {
@@ -61,16 +58,9 @@ class AvoidObstacles:
     def calculate_heading_vector(self):
         """Calculates the heading vector of the goal for the robot."""
         heading_vector = Point(0, 0)
-        # current_vector = self.pose.point
-        print("Current Vector >>> ", self.pose.unpack())
 
         # Calculate the heading vector.
         for index, sensor_reading in enumerate(self.sensor_readings):
-            print("Sensor Readings >>> ", index)
-            print("Ori Sensor Reading >>> ", sensor_reading.unpack())
-            print("Sensor Readings Rotated >>> ", sensor_reading.rotate_and_translate(self.pose.inverse().point, self.pose.inverse().theta).unpack())
-            # print("Reading >>> ", current_vector.subtract(sensor_reading.rotate_and_translate(self.pose.inverse().point, self.pose.inverse().theta)).unpack())
-
             inverse_pose = self.pose.inverse()
 
             reading = sensor_reading.rotate_and_translate(inverse_pose.point, inverse_pose.theta)
