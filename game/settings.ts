@@ -64,3 +64,9 @@ export const DEFAULT_FONT_SETTINGS = "10px Arial";
 export const DEFAULT_FONT_FILL_STYLE = "black";
 
 export const ROBOT_FONT_SETTINGS = "14px Arial";
+
+export const CLOSE_DISTANCE_IN_CM = 6; // in cm
+
+export const CLOSE_DISTANCE_IN_PX = CLOSE_DISTANCE_IN_CM * PIXEL_TO_CM_RATIO;
+
+export const OBSTACLE_DETECTION_SENSOR_LOCS = [0, 45, 90, 270, 315];
