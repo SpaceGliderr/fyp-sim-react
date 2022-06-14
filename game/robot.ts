@@ -7,11 +7,13 @@ import { Goal } from "./goal";
 import { CircleObstacle, PolygonObstacle } from "./obstacles";
 import { IRSensor, USSensor } from "./sensor";
 import {
+  CLOSE_DISTANCE_IN_PX,
   DIFFERENCE_IN_TIME,
   FRONT_FACING_SENSOR_LOCS,
   IR_SENSOR_LOCS,
   LEADER_ROBOT_COLOR,
   MAX_WHEEL_DRIVE_RATES,
+  OBSTACLE_DETECTION_SENSOR_LOCS,
   PIXEL_TO_CM_RATIO,
   ROBOT_COLOR,
   ROBOT_FONT_SETTINGS,
@@ -149,6 +151,8 @@ export class Robot extends CircleObstacle {
   };
 
   public setPose = (pose: Pose) => {
+    // if (this.previousPose === pose) return;
+
     // Set previous pose
     this.previousPose = this.pose;
     // if (hasCollided) {}
@@ -162,6 +166,7 @@ export class Robot extends CircleObstacle {
     this.setPoint(point);
     this.signal.setPoint(point);
 
+    // TODO: Fix this
     this.irSensors = IR_SENSOR_LOCS.map((loc) => {
       return new IRSensor(
         new Pose(
@@ -452,7 +457,9 @@ export class Robot extends CircleObstacle {
   public getAllFrontSensorDistances = () => {
     return filter(
       map(concat(this.irSensors, this.usSensors), (sensor) => {
-        if (FRONT_FACING_SENSOR_LOCS.includes(sensor.getDegreeOnRobot())) {
+        if (
+          OBSTACLE_DETECTION_SENSOR_LOCS.includes(sensor.getDegreeOnRobot())
+        ) {
           return sensor.getDistanceOfReading();
         }
       }),
@@ -460,6 +467,20 @@ export class Robot extends CircleObstacle {
         return reading !== null && reading !== undefined;
       }
     ) as number[];
+  };
+
+  public isRobotCloseToObstacle = () => {
+    let isCloseToObstacle = false;
+
+    concat(this.irSensors, this.usSensors).forEach((sensor) => {
+      if (OBSTACLE_DETECTION_SENSOR_LOCS.includes(sensor.getDegreeOnRobot())) {
+        if (sensor.getDistanceOfReading() <= CLOSE_DISTANCE_IN_PX) {
+          isCloseToObstacle = true;
+        }
+      }
+    });
+
+    return isCloseToObstacle;
   };
 
   public execute = (algorithmPayload: AlgorithmPayload) => {
