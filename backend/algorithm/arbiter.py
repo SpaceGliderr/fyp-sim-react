@@ -12,6 +12,7 @@ from models.robot import Robot
 from src.utils import transform_robot_api_model
 from src.api_models import _Robot
 from enum import Enum
+import src.settings as settings
 
 
 class ControllerType(Enum):
@@ -37,8 +38,8 @@ payload_type_dictionary = {
 # The arbiter class is a decision making class that decides the next move for the robot.
 class Arbiter:
     def __init__(self, robot: _Robot) -> None:
-        id, pose, sensor_readings, current_goal, pid_metadata, robots_within_signal_range, mapping_goals, status, ir_sensors = transform_robot_api_model(robot)
-        self.robot = Robot(id, pose, sensor_readings, mapping_goals, status, ir_sensors, current_goal, pid_metadata, robots_within_signal_range)
+        id, pose, sensor_readings, current_goal, pid_metadata, robots_within_signal_range, mapping_goals, status, ir_sensors, front_sensor_distances = transform_robot_api_model(robot)
+        self.robot = Robot(id, pose, sensor_readings, mapping_goals, status, ir_sensors, front_sensor_distances, current_goal, pid_metadata, robots_within_signal_range)
         self.mapping = Mapping()
 
         # Declare the controllers
@@ -101,14 +102,11 @@ class Arbiter:
         """
         Determines the state of the robot, whether it is in danger or not. And adjusts the controllers accordingly.
         """
-        if self.robot.status == "COLLISION":
-            self.update_controller(ControllerType.AVOID_OBSTACLES)
-        elif np.any(self.near_obstacle()):
-            self.update_controller(ControllerType.FOLLOW_WALL)
-        elif np.any(self.close_to_obstacle()):
+        print(self.robot.front_sensor_distances)
+        if self.robot.status == "COLLISION" or self.close_to_obstacle():
             self.update_controller(ControllerType.AVOID_OBSTACLES)
         elif self.robot.current_goal is not None or len(self.robot.mapping_goals) > 0:
-            self.update_controller(ControllerType.AVOID_OBSTACLES)
+            self.update_controller(ControllerType.GO_TO_GOAL)
 
 
     def execute(self) -> None:
@@ -122,21 +120,15 @@ class Arbiter:
             'pid_metadata': pid_metadata,
         }
 
-        print("Payload >>> ", self.payload)
-
         return self.payload
 
 
     # CONDITIONS
-    def near_obstacle(self):
+    def close_to_obstacle(self):
         """
         Checks if the robot is near an obstacle.
         """
-        pass
-
-
-    def close_to_obstacle(self):
-        """
-        Checks if the robot is dangerously close to an obstacle.
-        """
-        pass
+        for dist in self.robot.front_sensor_distances: 
+            if dist < settings.CLOSE_DISTANCE_IN_PX:
+                return True
+        return False
