@@ -95,9 +95,10 @@ export class Robot extends CircleObstacle {
   private previousPose: Pose;
   private robotColor: string;
   private mappingGoals: Goal[];
-  private sensorReadings: Point[][] = [];
+  private sensorReadings: Point[] = [];
   private leader: boolean = false;
   private currentController: RobotControllers = RobotControllers.GO_TO_GOAL;
+  private isCurrentlyMapping: boolean = false;
 
   constructor(
     vector: Vector,
@@ -264,7 +265,16 @@ export class Robot extends CircleObstacle {
       sensor.measure(obstacles, robots, this.id);
     });
 
-    this.sensorReadings.push(this.getAllSensorReadings());
+    if (this.isCurrentlyMapping) {
+      this.sensorReadings = this.sensorReadings.concat(
+        this.getAllSensorReadings()
+      );
+      console.log(this.sensorReadings);
+    }
+  };
+
+  public getSensorReadings = () => {
+    return this.sensorReadings;
   };
 
   // Moves using differential drive mechanics
@@ -560,6 +570,14 @@ export class Robot extends CircleObstacle {
   public setCurrentController = (controller: RobotControllers) => {
     this.currentController = controller;
   };
+
+  public getIsCurrentlyMapping = () => {
+    return this.isCurrentlyMapping;
+  };
+
+  public setIsCurrentlyMapping = (isCurrentlyMapping: boolean) => {
+    this.isCurrentlyMapping = isCurrentlyMapping;
+  };
 }
 
 export class LeaderRobot extends Robot {
@@ -576,4 +594,6 @@ export class LeaderRobot extends Robot {
     this.numberOfRegions = numberOfRegions;
     this.regions = regions;
   }
+
+  public transferSensorReadingData = (robot: Robot) => {};
 }

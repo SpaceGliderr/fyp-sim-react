@@ -1,5 +1,5 @@
 import combinations from "combinations";
-import { concat, filter, findIndex } from "lodash";
+import { concat, filter, findIndex, includes } from "lodash";
 import { Collision } from "../utils/collision";
 import { Point } from "../utils/coordinates";
 import { Goal } from "./goal";
@@ -294,9 +294,35 @@ export class Simulator {
 
     this.checkRobotMappingGoals();
 
-    if (this.mappingGoals.length === 0) {
+    if (this.isMappingGoalsComplete()) {
+      this.robots.forEach((robot) => {
+        robot.setIsCurrentlyMapping(false);
+      });
+
       this.setAction(SimulatorAction.MAPPING_COMPLETE);
     }
+  };
+
+  public isMappingGoalsComplete = () => {
+    let isComplete = false;
+
+    this.mappingGoals.forEach((mappingGoal) => {
+      isComplete = mappingGoal.goals.length === 0;
+    });
+
+    return isComplete;
+  };
+
+  public mappingPhaseComplete = () => {
+    this.robots.forEach((robot) => {
+      if (
+        includes(robot.getRobotsWithinSignalRange(), this.leaderRobot.getId())
+      ) {
+        this.leaderRobot.transferSensorReadingData(robot);
+        return;
+      }
+      robot.setStatus(RobotStatus.FIND_LEADER);
+    });
   };
 
   public mapGenerated = () => {
