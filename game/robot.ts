@@ -35,6 +35,7 @@ export enum RobotStatus {
   MAPPING = "MAPPING", // When the robot is mapping
   MAPPING_COMPLETE = "MAPPING_COMPLETE", // When the robot has completed mapping
   FIND_LEADER = "FIND_LEADER", // When the robot is finding the leader
+  NAVIGATION = "NAVIGATION", // When the robot is navigating
 }
 
 export enum RobotControllers {
@@ -69,6 +70,7 @@ export type RobotConstructorArgs = {
   id: number;
   leader: boolean;
   mappingGoals: Goal[];
+  leaderPosition: Point;
   regionDetails?: { regionNumber: number; regionPoints: Point[] };
   goal?: Goal;
 };
@@ -99,19 +101,19 @@ export class Robot extends CircleObstacle {
   private leader: boolean = false;
   private currentController: RobotControllers = RobotControllers.GO_TO_GOAL;
   private isCurrentlyMapping: boolean = false;
+  private leaderPosition: Point;
 
   constructor(
     vector: Vector,
     id: number,
     leader: boolean,
     mappingGoals: Goal[],
+    leaderPosition: Point,
     regionDetails?: { regionNumber: number; regionPoints: Point[] },
     goal?: Goal
   ) {
     super(vector, Robot.RADIUS);
     this.pose = new Pose(vector, MathHelper.degToRad(Math.random() * 360)); // Spawn heading is random
-    // this.pose = new Pose(vector, 1.5708);
-    // console.log("Robot theta: ", MathHelper.radToDeg(1.5708));
     this.irSensors = leader
       ? []
       : IR_SENSOR_LOCS.map((loc) => {
@@ -137,6 +139,7 @@ export class Robot extends CircleObstacle {
     this.robotColor = leader ? LEADER_ROBOT_COLOR : ROBOT_COLOR;
     this.mappingGoals = mappingGoals;
     this.leader = leader;
+    this.leaderPosition = leaderPosition;
   }
 
   public setPIDMetadata = (metadata: RobotPIDMetadata) => {
@@ -269,7 +272,6 @@ export class Robot extends CircleObstacle {
       this.sensorReadings = this.sensorReadings.concat(
         this.getAllSensorReadings()
       );
-      console.log(this.sensorReadings);
     }
   };
 
@@ -423,6 +425,7 @@ export class Robot extends CircleObstacle {
       current_controller: this.currentController,
       front_sensor_distances,
       ir_sensors,
+      leader_position: this.leaderPosition,
     };
     if (closestGoalPoint) {
       return {
@@ -551,10 +554,6 @@ export class Robot extends CircleObstacle {
         this.setStatus(RobotStatus.MAPPING);
         break;
 
-      case SimulatorAction.MAPPING_COMPLETE:
-        this.setStatus(RobotStatus.IDLE);
-        break;
-
       default:
         break;
     }
@@ -589,11 +588,13 @@ export class LeaderRobot extends Robot {
     numberOfRegions: number,
     regions: Point[][]
   ) {
-    const { vector, id, leader, regionDetails, goal } = robot;
-    super(vector, id, leader, [], regionDetails, goal);
+    const { vector, id, leader, leaderPosition, regionDetails, goal } = robot;
+    super(vector, id, leader, [], leaderPosition, regionDetails, goal);
     this.numberOfRegions = numberOfRegions;
     this.regions = regions;
   }
 
-  public transferSensorReadingData = (robot: Robot) => {};
+  public transferSensorReadingData = (robot: Robot) => {
+    console.log("Data Transferred Successfully >>> ", robot.getId());
+  };
 }

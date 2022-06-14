@@ -13,6 +13,11 @@ export enum SimulatorAction {
   NAVIGATION = "NAVIGATION",
 }
 
+export enum CommunicationPurpose {
+  GIVE_SENSOR_READINGS = "GIVE_SENSOR_READINGS",
+  PATH_PLAN = "PATH_PLAN",
+}
+
 export class Simulator {
   private robots: Robot[];
   private staticObstacles: PolygonObstacle[];
@@ -44,6 +49,7 @@ export class Simulator {
           robotId,
           false,
           this.getMappingGoals(robotId),
+          leaderRobotStartPosition,
           {
             regionNumber: robotId,
             regionPoints: regions[robotId],
@@ -57,6 +63,7 @@ export class Simulator {
         robotId,
         false,
         this.getMappingGoals(robotId),
+        leaderRobotStartPosition,
         {
           regionNumber: robotId,
           regionPoints: regions[robotId],
@@ -75,6 +82,7 @@ export class Simulator {
         ),
         id: -1,
         leader: true,
+        leaderPosition: leaderRobotStartPosition,
         mappingGoals: [],
       },
       numberOfRegions,
@@ -299,6 +307,8 @@ export class Simulator {
         robot.setIsCurrentlyMapping(false);
       });
 
+      this.mappingPhaseComplete();
+
       this.setAction(SimulatorAction.MAPPING_COMPLETE);
     }
   };
@@ -319,10 +329,31 @@ export class Simulator {
         includes(robot.getRobotsWithinSignalRange(), this.leaderRobot.getId())
       ) {
         this.leaderRobot.transferSensorReadingData(robot);
+        robot.setStatus(RobotStatus.NAVIGATION);
         return;
       }
       robot.setStatus(RobotStatus.FIND_LEADER);
     });
+  };
+
+  public communicateWithLeader = (
+    purpose: CommunicationPurpose,
+    robot: Robot
+  ) => {
+    switch (purpose) {
+      case CommunicationPurpose.GIVE_SENSOR_READINGS:
+        if (
+          includes(robot.getRobotsWithinSignalRange(), this.leaderRobot.getId())
+        ) {
+          this.leaderRobot.transferSensorReadingData(robot);
+          robot.setStatus(RobotStatus.NAVIGATION);
+        }
+        break;
+      case CommunicationPurpose.PATH_PLAN:
+        break;
+      default:
+        break;
+    }
   };
 
   public mapGenerated = () => {

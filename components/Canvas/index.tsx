@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CanvasProp } from "./props";
 import { CanvasHelper } from "../../utils/canvas";
-import { Simulator, SimulatorAction } from "../../game";
+import { CommunicationPurpose, Simulator, SimulatorAction } from "../../game";
 import { Map } from "../../game/map";
 import {
   GOAL_SPAWN_RATE,
@@ -64,9 +64,9 @@ const Canvas = (props: CanvasProp) => {
   }, [simulator]);
 
   const executeAction = useCallback(() => {
-    if (simulatorAction === SimulatorAction.MAPPING) {
-      const currentRobot = simulator.getRobotById(currentRobotId);
+    const currentRobot = simulator.getRobotById(currentRobotId);
 
+    if (simulatorAction === SimulatorAction.MAPPING) {
       if (currentRobot.getStatus() === RobotStatus.MAPPING_COMPLETE) {
         currentRobot.setIsCurrentlyMapping(false);
         setCurrentRobotId((currentRobotId) => {
@@ -85,11 +85,22 @@ const Canvas = (props: CanvasProp) => {
 
       simulator.mapping();
     } else if (simulatorAction === SimulatorAction.MAPPING_COMPLETE) {
-      console.log("SIMULATOR MAPPING COMPLETE");
-      // console.log(simulator.getRobots()[1].getIsCurrentlyMapping());
-      // Navigate to leader robot position
-      // const response = executeGenerateMap({});
-      // response.then(() => simulator.mapGenerated());
+      if (currentRobot.getStatus() === RobotStatus.FIND_LEADER) {
+        const response = executeSingleRobot(currentRobot.generatePayload());
+        response
+          .then((res) => {
+            currentRobot.execute(res);
+          })
+          .catch(() => {});
+        simulator.communicateWithLeader(
+          CommunicationPurpose.GIVE_SENSOR_READINGS,
+          currentRobot
+        );
+      } else {
+        setCurrentRobotId((currentRobotId) => {
+          return (currentRobotId + 1) % numberOfRobots;
+        });
+      }
     }
   }, [simulator, simulatorAction, currentRobotId, numberOfRobots]);
 
