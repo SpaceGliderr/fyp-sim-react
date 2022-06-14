@@ -117,13 +117,12 @@ const Canvas = (props: CanvasProp) => {
       // response.then((res) => simulator.execute(res)).catch(() => {});
 
       const response = executeSingleRobot(
-        simulator.getRobots()[0].generatePayload()
+        simulator.getRobots()[2].generatePayload()
       );
 
       response
         .then((res) => {
-          simulator.getRobots()[0].execute(res);
-          // console.log(res);
+          simulator.getRobots()[2].execute(res);
         })
         .catch(() => {});
     }, TICKS_PER_UPDATE);
