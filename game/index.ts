@@ -124,9 +124,10 @@ export class Simulator {
   };
 
   public checkForCollisions = () => {
-    this.staticObstacles.forEach((obstacle, index) => {
-      if (index == 0) return; // Skip past the first obstacle because that defines the boundaries of the environment
-      this.robots.forEach((robot) => {
+    this.robots.forEach((robot) => {
+      this.staticObstacles.forEach((obstacle, index) => {
+        if (index === 0) return;
+
         if (
           Collision.circlePolygonIntersect(
             obstacle,
@@ -135,6 +136,7 @@ export class Simulator {
           !this.withinBoundaries(robot)
         ) {
           this.resolveCollision(robot);
+          this.readRobotSensors();
         }
       });
     });
