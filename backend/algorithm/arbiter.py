@@ -102,7 +102,6 @@ class Arbiter:
         """
         Determines the state of the robot, whether it is in danger or not. And adjusts the controllers accordingly.
         """
-        print(self.robot.front_sensor_distances)
         if self.robot.status == "COLLISION" or self.close_to_obstacle():
             self.update_controller(ControllerType.AVOID_OBSTACLES)
         elif self.robot.current_goal is not None or len(self.robot.mapping_goals) > 0:
@@ -112,7 +111,6 @@ class Arbiter:
     def execute(self) -> None:
         self.determine_goal()
         self.determine_controller()
-        # print(self.controller)
         steering_input, pid_metadata = self.controller.calculate_steering_inputs()
 
         self.payload['payload'] = {
