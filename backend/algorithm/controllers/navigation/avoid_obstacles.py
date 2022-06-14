@@ -17,7 +17,7 @@ class AvoidObstacles:
 
         # PID controller parameters.
         self.kP = settings.PID_CONTROLLER['kP'] # Proportional gain.
-        self.kI = 0 # Integral gain.
+        self.kI = settings.PID_CONTROLLER['kI'] # Integral gain.
         self.kD = settings.PID_CONTROLLER['kD'] # Derivative gain.
         
         # Previous PID controller values.
@@ -75,24 +75,7 @@ class AvoidObstacles:
 
             reading = sensor_reading.rotate_and_translate(inverse_pose.point, inverse_pose.theta)
 
-
-            # reading = sensor_reading.subtract(current_vector).scale(self.sensor_weights[index])
-
-            # if index in self.inverted_weight_indices:
-            #     reading = reading.invert()
-
-            
-            # print("Sensor Readings >>> ", index)
-            # print("Other Reading >>> ", sensor_reading.subtract(current_vector).unpack())
-
             heading_vector = heading_vector.add(reading.scale(self.sensor_weights[index]))
-            # print("Heading Vector >>> ", heading_vector.unpack())
-
-        # if floor(heading_vector.x) == 0:
-        #     heading_vector.x = heading_vector.x + 0.5
-
-        print("Heading_Vector >>> ", heading_vector.unpack())
-        # print("Heading_Vector Rotated >>> ", heading_vector.rotate_vector(self.pose.theta).unpack())
 
         return heading_vector
 
