@@ -17,13 +17,6 @@ def uni_to_diff(velocity, omega):
 
     velocityL = ((2.0 * velocity) - (omega * length)) / (2.0 * radius)
     velocityR = ((2.0 * velocity) + (omega * length)) / (2.0 * radius)
-    
-    # Not sure whether we allow the robot wheel to reverse, therefore, any negative drive rates will be set to 0.
-    # TODO: Might have to remove this restriction, don't know what effects it has on the error terms in the calculation of steering inputs.
-    # if (velocityL < 0):
-    #     velocityL = 0
-    # if (velocityR < 0):
-    #     velocityR = 0
 
     return velocityL, velocityR
 
@@ -49,7 +42,7 @@ def transform_robot_api_model(robot: _Robot):
         for goal in robot.mapping_goals:
             mapping_goals.append(Point(goal.x, goal.y))
     
-    return robot.id, pose, robot.sensor_readings, current_goal, robot.pid_metadata, robot.robots_within_signal_range, mapping_goals, robot.status, transform_sensor_readings(robot.ir_sensors)
+    return robot.id, pose, robot.sensor_readings, current_goal, robot.pid_metadata, robot.robots_within_signal_range, mapping_goals, robot.status, transform_sensor_readings(robot.ir_sensors), robot.front_sensor_distances
 
 
 def clear_map_json():    
