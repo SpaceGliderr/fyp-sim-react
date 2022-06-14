@@ -33,18 +33,14 @@ def read_root():
 
 @app.post("/algorithm/")
 def algorithm(algorithm: _Algorithm):
-    print("Robots \n", algorithm.robots)
-    print("Environment \n", algorithm.environment)
     base_algorithm = BaseAlgorithm(algorithm)
-    print(base_algorithm.makeDecisions())
     decisions = base_algorithm.makeDecisions()
     return decisions
 
 @app.post("/single_robot/")
 def single_robot(robot: _Robot):
-    print("Robot \n", robot)
     decision = Arbiter(robot)
-    return decision
+    return decision.execute()
 
 
 @app.post("/clear_map_json/")

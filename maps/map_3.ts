@@ -287,7 +287,6 @@ export const MAP_3: MapTemplate = {
         new Goal([new Point(810, 550)], GoalShape.CIRCLE, 2, 7),
         new Goal([new Point(720, 720)], GoalShape.CIRCLE, 2, 7),
         new Goal([new Point(1090, 730)], GoalShape.CIRCLE, 2, 7),
-        new Goal([new Point(960, 1000)], GoalShape.CIRCLE, 2, 7),
       ],
     },
   ],

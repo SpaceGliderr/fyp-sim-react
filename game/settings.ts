@@ -4,6 +4,8 @@ export const IR_SENSOR_LOCS = [0, 45, 90, 135, 180, 225, 270, 315];
 
 export const US_SENSOR_LOCS = [0, 45, 90, 270, 315];
 
+export const FRONT_FACING_SENSOR_LOCS = [0, 45, 315];
+
 // export const US_SENSOR_LOCS = [0];
 
 export const PIXEL_TO_CM_RATIO = 2;
@@ -43,7 +45,7 @@ export const WHEEL_BASE_LENGTH_IN_PX =
 
 export const DIFFERENCE_IN_TIME = UPDATES_PER_SECOND / 1000;
 
-export const MAX_WHEEL_DRIVE_RATES = 18; // in rad/s
+export const MAX_WHEEL_DRIVE_RATES = 19; // in rad/s
 
 export const SIGNAL_RADIUS_IN_CM = 100; // in cm
 
@@ -62,3 +64,9 @@ export const DEFAULT_FONT_SETTINGS = "10px Arial";
 export const DEFAULT_FONT_FILL_STYLE = "black";
 
 export const ROBOT_FONT_SETTINGS = "14px Arial";
+
+export const CLOSE_DISTANCE_IN_CM = 6; // in cm
+
+export const CLOSE_DISTANCE_IN_PX = CLOSE_DISTANCE_IN_CM * PIXEL_TO_CM_RATIO;
+
+export const OBSTACLE_DETECTION_SENSOR_LOCS = [0, 45, 90, 270, 315];

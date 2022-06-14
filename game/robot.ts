@@ -1,4 +1,5 @@
 import { concat, filter, includes, indexOf, isEmpty, map, min } from "lodash";
+import { SimulatorAction } from ".";
 import { CanvasHelper } from "../utils/canvas";
 import { Line, Point, Pose, Vector } from "../utils/coordinates";
 import { MathHelper } from "../utils/math";
@@ -6,10 +7,13 @@ import { Goal } from "./goal";
 import { CircleObstacle, PolygonObstacle } from "./obstacles";
 import { IRSensor, USSensor } from "./sensor";
 import {
+  CLOSE_DISTANCE_IN_PX,
   DIFFERENCE_IN_TIME,
+  FRONT_FACING_SENSOR_LOCS,
   IR_SENSOR_LOCS,
   LEADER_ROBOT_COLOR,
   MAX_WHEEL_DRIVE_RATES,
+  OBSTACLE_DETECTION_SENSOR_LOCS,
   PIXEL_TO_CM_RATIO,
   ROBOT_COLOR,
   ROBOT_FONT_SETTINGS,
@@ -30,6 +34,13 @@ export enum RobotStatus {
   COLLISION = "COLLISION", // When the robot is in collision with an obstacle
   MAPPING = "MAPPING", // When the robot is mapping
   MAPPING_COMPLETE = "MAPPING_COMPLETE", // When the robot has completed mapping
+  FIND_LEADER = "FIND_LEADER", // When the robot is finding the leader
+}
+
+export enum RobotControllers {
+  GO_TO_GOAL = "GO_TO_GOAL",
+  AVOID_OBSTACLES = "AVOID_OBSTACLES",
+  FOLLOW_WALL = "FOLLOW_WALL",
 }
 
 export type RobotPIDMetadata = {
@@ -37,18 +48,16 @@ export type RobotPIDMetadata = {
   prev_eI: number;
 };
 
-export interface ExecutionPayload {}
+export interface ExecutionPayload {
+  steering_input: [number, number];
+  pid_metadata: RobotPIDMetadata;
+}
 
 export type AlgorithmPayload = {
   robot_id: number;
   type: number;
   payload: ExecutionPayload;
 };
-
-export interface GoToGoalPayload extends ExecutionPayload {
-  steering_input: [number, number];
-  pid_metadata: RobotPIDMetadata;
-}
 
 export type ActivityHistory = {
   timeTaken?: number | null; // in milliseconds, null means it was a permanent goal
@@ -71,7 +80,7 @@ export class Robot extends CircleObstacle {
   private pose: Pose;
   private irSensors: IRSensor[];
   private usSensors: USSensor[];
-  private status: RobotStatus = RobotStatus.IDLE;
+  private status: RobotStatus = RobotStatus.MAPPING; // TODO: Change this back to IDLE once debugging is done with mapping
   private currentGoal: Goal | undefined = undefined; // A robot's current goal can be undefined
   private activityHistory: ActivityHistory[] = [];
   private id: number;
@@ -88,6 +97,7 @@ export class Robot extends CircleObstacle {
   private mappingGoals: Goal[];
   private sensorReadings: Point[][] = [];
   private leader: boolean = false;
+  private currentController: RobotControllers = RobotControllers.GO_TO_GOAL;
 
   constructor(
     vector: Vector,
@@ -99,18 +109,22 @@ export class Robot extends CircleObstacle {
   ) {
     super(vector, Robot.RADIUS);
     this.pose = new Pose(vector, MathHelper.degToRad(Math.random() * 360)); // Spawn heading is random
+    // this.pose = new Pose(vector, 1.5708);
+    // console.log("Robot theta: ", MathHelper.radToDeg(1.5708));
     this.irSensors = leader
       ? []
       : IR_SENSOR_LOCS.map((loc) => {
           return new IRSensor(
-            new Pose(vector, MathHelper.degToRad(loc) + this.pose.getTheta())
+            new Pose(vector, MathHelper.degToRad(loc) + this.pose.getTheta()),
+            loc
           );
         });
     this.usSensors = leader
       ? []
       : US_SENSOR_LOCS.map((loc) => {
           return new USSensor(
-            new Pose(vector, MathHelper.degToRad(loc) + this.pose.getTheta())
+            new Pose(vector, MathHelper.degToRad(loc) + this.pose.getTheta()),
+            loc
           );
         });
     this.currentGoal = goal;
@@ -137,6 +151,8 @@ export class Robot extends CircleObstacle {
   };
 
   public setPose = (pose: Pose) => {
+    // if (this.previousPose === pose) return;
+
     // Set previous pose
     this.previousPose = this.pose;
     // if (hasCollided) {}
@@ -150,13 +166,14 @@ export class Robot extends CircleObstacle {
     this.setPoint(point);
     this.signal.setPoint(point);
 
-    // Update sensor bearings based on the new pose
+    // TODO: Fix this
     this.irSensors = IR_SENSOR_LOCS.map((loc) => {
       return new IRSensor(
         new Pose(
           this.pose.getPoint(),
           MathHelper.degToRad(loc) + this.pose.getTheta()
-        )
+        ),
+        loc
       );
     });
     this.usSensors = US_SENSOR_LOCS.map((loc) => {
@@ -164,7 +181,8 @@ export class Robot extends CircleObstacle {
         new Pose(
           this.pose.getPoint(),
           MathHelper.degToRad(loc) + this.pose.getTheta()
-        )
+        ),
+        loc
       );
     });
   };
@@ -251,11 +269,14 @@ export class Robot extends CircleObstacle {
 
   // Moves using differential drive mechanics
   public drive = (dL: number, dR: number) => {
-    const driveRateL = Math.min(dL, MAX_WHEEL_DRIVE_RATES);
-    const driveRateR = Math.min(dR, MAX_WHEEL_DRIVE_RATES);
+    // let driveRateL = Math.min(dL, MAX_WHEEL_DRIVE_RATES);
+    // let driveRateR = Math.min(dR, MAX_WHEEL_DRIVE_RATES);
 
-    const dThetaL = driveRateL * DIFFERENCE_IN_TIME;
-    const dThetaR = driveRateR * DIFFERENCE_IN_TIME;
+    // driveRateL = Math.max(driveRateL, -MAX_WHEEL_DRIVE_RATES);
+    // driveRateR = Math.max(driveRateR, -MAX_WHEEL_DRIVE_RATES);
+
+    const dThetaL = dL * DIFFERENCE_IN_TIME;
+    const dThetaR = dR * DIFFERENCE_IN_TIME;
 
     const wheelMetersPerRad = WHEEL_RADIUS_IN_PX;
     const dLeftWheel = dThetaL * wheelMetersPerRad;
@@ -268,7 +289,7 @@ export class Robot extends CircleObstacle {
       this.pose.getPoint().getY() + dCenter * Math.sin(this.pose.getTheta());
     const newTheta =
       this.pose.getTheta() +
-      (dLeftWheel - dRightWheel) / WHEEL_BASE_LENGTH_IN_PX;
+      (dRightWheel - dLeftWheel) / WHEEL_BASE_LENGTH_IN_PX;
 
     this.setPose(new Pose(new Vector(newX, newY), newTheta));
   };
@@ -323,6 +344,8 @@ export class Robot extends CircleObstacle {
       this.setStatus(RobotStatus.MAPPING_COMPLETE);
     }
 
+    this.resetPidMetadata();
+
     return { id: this.id, removedMappingGoal };
   };
 
@@ -358,6 +381,12 @@ export class Robot extends CircleObstacle {
     return this.id;
   };
 
+  public calculateDistanceOfSensorReadings = (readings: Point[]) => {
+    readings.map((reading) => {
+      return this.pose.getPoint().distanceTo(reading);
+    });
+  };
+
   public generatePayload = () => {
     const sensor_readings = filter(
       map(concat(this.irSensors, this.usSensors), (sensor) => {
@@ -367,24 +396,51 @@ export class Robot extends CircleObstacle {
         return readings.reading !== null;
       }
     );
+    const front_sensor_distances = this.getAllFrontSensorDistances();
     const closestGoalPoint = this.getClosestGoalPoint();
-    if (closestGoalPoint) {
-      return {
-        id: this.id,
-        pose: this.pose,
-        current_goal: closestGoalPoint,
-        sensor_readings,
-        pid_metadata: this.pidMetadata,
-        robots_within_signal_range: this.robotsWithinSignalRange,
-      };
-    }
-    return {
+    const ir_sensors = this.getIRSensors();
+
+    const payload = {
       id: this.id,
       pose: this.pose,
       sensor_readings,
       pid_metadata: this.pidMetadata,
       robots_within_signal_range: this.robotsWithinSignalRange,
+      mapping_goals: this.mappingGoals.map((goal) => {
+        return goal.getPoints()[0];
+      }),
+      status: this.status,
+      current_controller: this.currentController,
+      front_sensor_distances,
+      ir_sensors,
     };
+    if (closestGoalPoint) {
+      return {
+        current_goal: closestGoalPoint,
+        ...payload,
+      };
+    }
+    return payload;
+  };
+
+  public getIRSensors = () => {
+    return map(this.irSensors, (sensor) => {
+      // const val = {
+      //   sensor_location: sensor.getDegreeOnRobot(),
+      // };
+
+      if (sensor.getReading() !== null) {
+        return {
+          reading: sensor.getReading(),
+          // ...val,
+        };
+      } else {
+        return {
+          reading: sensor.getEmptyReading(),
+          // ...val,
+        };
+      }
+    });
   };
 
   public getAllSensorReadings = () => {
@@ -398,22 +454,56 @@ export class Robot extends CircleObstacle {
     ) as Point[];
   };
 
+  public getAllFrontSensorDistances = () => {
+    return filter(
+      map(concat(this.irSensors, this.usSensors), (sensor) => {
+        if (
+          OBSTACLE_DETECTION_SENSOR_LOCS.includes(sensor.getDegreeOnRobot())
+        ) {
+          return sensor.getDistanceOfReading();
+        }
+      }),
+      (reading) => {
+        return reading !== null && reading !== undefined;
+      }
+    ) as number[];
+  };
+
+  public isRobotCloseToObstacle = () => {
+    let isCloseToObstacle = false;
+
+    concat(this.irSensors, this.usSensors).forEach((sensor) => {
+      if (OBSTACLE_DETECTION_SENSOR_LOCS.includes(sensor.getDegreeOnRobot())) {
+        if (sensor.getDistanceOfReading() <= CLOSE_DISTANCE_IN_PX) {
+          isCloseToObstacle = true;
+        }
+      }
+    });
+
+    return isCloseToObstacle;
+  };
+
   public execute = (algorithmPayload: AlgorithmPayload) => {
     const { type, payload } = algorithmPayload;
 
     if (payload === null) return;
 
+    const { steering_input, pid_metadata } = payload as ExecutionPayload;
+
     switch (type) {
       case 1: // Go To Goal behavior
-        const { steering_input, pid_metadata } = payload as GoToGoalPayload;
         this.drive(steering_input[0], steering_input[1]);
         this.setPIDMetadata(pid_metadata);
+        this.setCurrentController(RobotControllers.GO_TO_GOAL);
         break;
 
       case 2: // Follow wall behavior
         break;
 
       case 3: // Avoid obstacle behavior
+        this.drive(steering_input[0], steering_input[1]);
+        this.setPIDMetadata(pid_metadata);
+        this.setCurrentController(RobotControllers.AVOID_OBSTACLES);
         break;
 
       default:
@@ -443,6 +533,32 @@ export class Robot extends CircleObstacle {
 
   public isWithinLeaderRobotRange = () => {
     return includes(this.robotsWithinSignalRange, -1);
+  };
+
+  public setStatusOnSimAction = (action: SimulatorAction) => {
+    switch (action) {
+      case SimulatorAction.MAPPING:
+        this.setStatus(RobotStatus.MAPPING);
+        break;
+
+      case SimulatorAction.MAPPING_COMPLETE:
+        this.setStatus(RobotStatus.IDLE);
+        break;
+
+      default:
+        break;
+    }
+  };
+
+  public resetPidMetadata = () => {
+    this.pidMetadata = {
+      prev_eP: 0,
+      prev_eI: 0,
+    };
+  };
+
+  public setCurrentController = (controller: RobotControllers) => {
+    this.currentController = controller;
   };
 }
 

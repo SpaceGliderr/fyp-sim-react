@@ -124,9 +124,10 @@ export class Simulator {
   };
 
   public checkForCollisions = () => {
-    this.staticObstacles.forEach((obstacle, index) => {
-      if (index == 0) return; // Skip past the first obstacle because that defines the boundaries of the environment
-      this.robots.forEach((robot) => {
+    this.robots.forEach((robot) => {
+      this.staticObstacles.forEach((obstacle, index) => {
+        if (index === 0) return;
+
         if (
           Collision.circlePolygonIntersect(
             obstacle,
@@ -135,6 +136,7 @@ export class Simulator {
           !this.withinBoundaries(robot)
         ) {
           this.resolveCollision(robot);
+          this.readRobotSensors();
         }
       });
     });
@@ -275,8 +277,12 @@ export class Simulator {
     return this.leaderRobot;
   };
 
-  public setActionToNavigation = () => {
-    this.action = SimulatorAction.NAVIGATION;
+  public setAction = (action: SimulatorAction) => {
+    this.action = action;
+
+    this.robots.forEach((robot) => {
+      robot.setStatusOnSimAction(action);
+    });
   };
 
   public mapping = () => {
@@ -289,12 +295,12 @@ export class Simulator {
     this.checkRobotMappingGoals();
 
     if (this.mappingGoals.length === 0) {
-      this.action = SimulatorAction.MAPPING_COMPLETE;
+      this.setAction(SimulatorAction.MAPPING_COMPLETE);
     }
   };
 
   public mapGenerated = () => {
-    this.action = SimulatorAction.NAVIGATION;
+    this.setAction(SimulatorAction.NAVIGATION);
   };
 
   public getAction = () => {

@@ -18,30 +18,55 @@ export abstract class Sensor {
   private reading: Point | null = null;
   private mLen: number;
   private color: string;
+  private degreeOnRobot: number;
+  private distanceOfReading: number;
 
-  constructor(pose: Pose, mLen: number, color: string) {
+  constructor(pose: Pose, mLen: number, color: string, degreeOnRobot: number) {
     this.pose = pose;
     this.mLen = mLen;
     this.color = color;
+    this.degreeOnRobot = degreeOnRobot;
+    this.distanceOfReading = this.getPointOnRobot().distanceTo(
+      this.getEmptyReading()
+    );
+  }
+
+  public getEmptyReading = (): Point => {
+    return MathHelper.calcEndPoint(this.pose, this.mLen);
+  };
+
+  public getDegreeOnRobot(): number {
+    return this.degreeOnRobot;
+  }
+
+  public getDistanceOfReading(): number {
+    return this.distanceOfReading;
   }
 
   public setReading = (newReading: Point) => {
+    const pointOnRobot = this.getPointOnRobot();
+
     if (this.reading === null) {
       this.reading = newReading;
+      this.distanceOfReading = pointOnRobot.distanceTo(newReading);
       return;
     }
 
     if (
-      this.pose.getPoint().distanceTo(newReading) <
-      this.pose.getPoint().distanceTo(this.reading)
+      pointOnRobot.distanceTo(newReading) <
+      pointOnRobot.distanceTo(this.reading)
     ) {
       this.reading = newReading;
+      this.distanceOfReading = pointOnRobot.distanceTo(newReading);
       return;
     }
   };
 
   public clearReading = () => {
     this.reading = null;
+    this.distanceOfReading = this.getPointOnRobot().distanceTo(
+      this.getEmptyReading()
+    );
   };
 
   public getReading = () => {
@@ -123,26 +148,32 @@ export abstract class Sensor {
       2.5
     );
   };
+
+  public getPointOnRobot = () => {
+    return MathHelper.calcEndPoint(this.pose, ROBOT_RADIUS * PIXEL_TO_CM_RATIO);
+  };
 }
 
 // Infrared Sensor
 export class IRSensor extends Sensor {
-  constructor(pose: Pose) {
+  constructor(pose: Pose, degreeOnRobot: number) {
     super(
       pose,
       IR_SENSOR_MEASUREMENT_LENGTH * PIXEL_TO_CM_RATIO,
-      IR_SENSOR_COLOR
+      IR_SENSOR_COLOR,
+      degreeOnRobot
     );
   }
 }
 
 // Ultrasonic Sensor (Proximity)
 export class USSensor extends Sensor {
-  constructor(pose: Pose) {
+  constructor(pose: Pose, degreeOnRobot: number) {
     super(
       pose,
       US_SENSOR_MEASUREMENT_LENGTH * PIXEL_TO_CM_RATIO,
-      US_SENSOR_COLOR
+      US_SENSOR_COLOR,
+      degreeOnRobot
     );
   }
 }
