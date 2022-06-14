@@ -41,8 +41,10 @@ def transform_robot_api_model(robot: _Robot):
     if (len(robot.mapping_goals) > 0):
         for goal in robot.mapping_goals:
             mapping_goals.append(Point(goal.x, goal.y))
+
+    leader_position = Point(robot.leader_position.x, robot.leader_position.y)
     
-    return robot.id, pose, robot.sensor_readings, current_goal, robot.pid_metadata, robot.robots_within_signal_range, mapping_goals, robot.status, transform_sensor_readings(robot.ir_sensors), robot.front_sensor_distances
+    return robot.id, pose, robot.sensor_readings, current_goal, robot.pid_metadata, robot.robots_within_signal_range, mapping_goals, robot.status, transform_sensor_readings(robot.ir_sensors), robot.front_sensor_distances, leader_position
 
 
 def clear_map_json():    

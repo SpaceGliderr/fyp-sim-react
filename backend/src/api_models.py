@@ -30,6 +30,7 @@ class _Robot(BaseModel):
     status: str
     front_sensor_distances: List[float]
     ir_sensors: List[_SensorReading]
+    leader_position: _Point
     current_goal: _Point = None # optional, a robot can not have a goal at a given time
     pid_metadata: _PIDMetadata # optional, pid metadata for the robot
     robots_within_signal_range: List[int] # optional, list of robots within signal range of the robot
