@@ -19,13 +19,16 @@ export abstract class Sensor {
   private mLen: number;
   private color: string;
   private degreeOnRobot: number;
-  private distanceOfReading: number | null = null;
+  private distanceOfReading: number;
 
   constructor(pose: Pose, mLen: number, color: string, degreeOnRobot: number) {
     this.pose = pose;
     this.mLen = mLen;
     this.color = color;
     this.degreeOnRobot = degreeOnRobot;
+    this.distanceOfReading = this.getPointOnRobot().distanceTo(
+      this.getEmptyReading()
+    );
   }
 
   public getEmptyReading = (): Point => {
@@ -36,14 +39,14 @@ export abstract class Sensor {
     return this.degreeOnRobot;
   }
 
-  public getDistanceOfReading(): number | null {
+  public getDistanceOfReading(): number {
     return this.distanceOfReading;
   }
 
   public setReading = (newReading: Point) => {
     const pointOnRobot = this.getPointOnRobot();
 
-    if (this.reading === null || this.distanceOfReading === null) {
+    if (this.reading === null) {
       this.reading = newReading;
       this.distanceOfReading = pointOnRobot.distanceTo(newReading);
       return;
@@ -61,7 +64,9 @@ export abstract class Sensor {
 
   public clearReading = () => {
     this.reading = null;
-    this.distanceOfReading = null;
+    this.distanceOfReading = this.getPointOnRobot().distanceTo(
+      this.getEmptyReading()
+    );
   };
 
   public getReading = () => {
