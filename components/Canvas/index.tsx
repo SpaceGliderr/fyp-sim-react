@@ -15,7 +15,6 @@ import { Point } from "../../utils/coordinates";
 import {
   executeBatchAlgorithm,
   executeGenerateMap,
-  executeInitializeMapJSON,
   executeSingleRobot,
 } from "../../public/api/algorithm";
 import { RobotStatus } from "../../game/robot";
@@ -52,6 +51,10 @@ const Canvas = (props: CanvasProp) => {
 
       case SimulatorAction.MAPPING_COMPLETE:
         setSimulatorAction(SimulatorAction.MAPPING_COMPLETE);
+        break;
+
+      case SimulatorAction.GENERATE_MAP:
+        setSimulatorAction(SimulatorAction.GENERATE_MAP);
         break;
 
       case SimulatorAction.NAVIGATION:
@@ -101,8 +104,26 @@ const Canvas = (props: CanvasProp) => {
           return (currentRobotId + 1) % numberOfRobots;
         });
       }
+
+      simulator.mappingComplete();
     }
   }, [simulator, simulatorAction, currentRobotId, numberOfRobots]);
+
+  useEffect(() => {
+    if (simulatorAction === SimulatorAction.GENERATE_MAP) {
+      console.log("Generate Map");
+      const response = executeGenerateMap(
+        simulator
+          .getLeaderRobot()
+          .generateMappingPayload(simulator.getWidth(), simulator.getHeight())
+      );
+      response
+        .then((res) => {
+          console.log(res);
+        })
+        .catch(() => {});
+    }
+  }, [simulatorAction, simulator]);
 
   // ========================= ENVIRONMENT RENDERING =========================
   // Declare canvas references

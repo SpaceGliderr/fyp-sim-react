@@ -10,6 +10,7 @@ import { AlgorithmPayload, LeaderRobot, Robot, RobotStatus } from "./robot";
 export enum SimulatorAction {
   MAPPING = "MAPPING",
   MAPPING_COMPLETE = "MAPPING_COMPLETE",
+  GENERATE_MAP = "GENERATE_MAP",
   NAVIGATION = "NAVIGATION",
 }
 
@@ -27,6 +28,8 @@ export class Simulator {
   private leaderRobot: LeaderRobot;
   private action: SimulatorAction = SimulatorAction.MAPPING; // Default after initializing is mapping
   private mappingGoals: MappingGoal[];
+  private width: number;
+  private height: number;
 
   constructor(map: Map) {
     const {
@@ -38,7 +41,11 @@ export class Simulator {
       leaderRobotStartPosition,
       numberOfRegions,
       mappingGoals,
+      width,
+      height,
     } = map.unpack();
+    this.width = width;
+    this.height = height;
     this.goals = goals ?? [];
     this.mappingGoals = mappingGoals;
     this.robots = robotStartPositions.map((position, robotId) => {
@@ -329,11 +336,21 @@ export class Simulator {
         includes(robot.getRobotsWithinSignalRange(), this.leaderRobot.getId())
       ) {
         this.leaderRobot.transferSensorReadingData(robot);
-        robot.setStatus(RobotStatus.NAVIGATION);
+        robot.setStatus(RobotStatus.MAPPING_COMPLETE);
         return;
       }
       robot.setStatus(RobotStatus.FIND_LEADER);
     });
+  };
+
+  public mappingComplete = () => {
+    if (
+      this.robots.every((robot) => {
+        return robot.getStatus() === RobotStatus.MAPPING_COMPLETE;
+      })
+    ) {
+      this.setAction(SimulatorAction.GENERATE_MAP);
+    }
   };
 
   public communicateWithLeader = (
@@ -346,7 +363,7 @@ export class Simulator {
           includes(robot.getRobotsWithinSignalRange(), this.leaderRobot.getId())
         ) {
           this.leaderRobot.transferSensorReadingData(robot);
-          robot.setStatus(RobotStatus.NAVIGATION);
+          robot.setStatus(RobotStatus.MAPPING_COMPLETE);
         }
         break;
       case CommunicationPurpose.PATH_PLAN:
@@ -362,5 +379,13 @@ export class Simulator {
 
   public getAction = () => {
     return this.action;
+  };
+
+  public getWidth = () => {
+    return this.width;
+  };
+
+  public getHeight = () => {
+    return this.height;
   };
 }
