@@ -222,7 +222,7 @@ export class Robot extends CircleObstacle {
     );
 
     if (this.leader) {
-      // Change text offsets to make it look better
+      // TODO: Change text offsets to make it look better
     }
 
     CanvasHelper.drawText(
@@ -577,11 +577,21 @@ export class Robot extends CircleObstacle {
   public setIsCurrentlyMapping = (isCurrentlyMapping: boolean) => {
     this.isCurrentlyMapping = isCurrentlyMapping;
   };
+
+  public isLeader = () => {
+    return this.leader;
+  };
 }
+
+export type SensorReadingsPerRegion = {
+  regionNumber: number;
+  sensorReadings: Point[];
+};
 
 export class LeaderRobot extends Robot {
   private numberOfRegions: number;
   private regions: Point[][];
+  private sensorReadingsPerRegion: SensorReadingsPerRegion[];
 
   constructor(
     robot: RobotConstructorArgs,
@@ -592,9 +602,42 @@ export class LeaderRobot extends Robot {
     super(vector, id, leader, [], leaderPosition, regionDetails, goal);
     this.numberOfRegions = numberOfRegions;
     this.regions = regions;
+    this.sensorReadingsPerRegion = this.initSensorReadingsPerRegion();
   }
+
+  public initSensorReadingsPerRegion = () => {
+    const sensorReadingsPerRegion = [];
+    for (let i = 0; i < this.numberOfRegions; i++) {
+      sensorReadingsPerRegion.push({
+        regionNumber: i,
+        sensorReadings: [],
+      });
+    }
+    return sensorReadingsPerRegion;
+  };
 
   public transferSensorReadingData = (robot: Robot) => {
     console.log("Data Transferred Successfully >>> ", robot.getId());
+    this.sensorReadingsPerRegion.forEach((region) => {
+      if (robot.getId() === region.regionNumber) {
+        region.sensorReadings = robot.getSensorReadings();
+      }
+    });
+  };
+
+  public generateMappingPayload = (width: number, height: number) => {
+    return {
+      width,
+      height,
+      regions: this.regions,
+      sensor_readings_per_region: this.sensorReadingsPerRegion.map(
+        (reading) => {
+          return {
+            region_number: reading.regionNumber,
+            sensor_readings: reading.sensorReadings,
+          };
+        }
+      ),
+    };
   };
 }
