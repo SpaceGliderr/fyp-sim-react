@@ -37,11 +37,6 @@ const Canvas = (props: CanvasProp) => {
   const [currentRobotId, setCurrentRobotId] = useState<number>(0); // Current robot id that is being controlled
   const numberOfRobots = simulator.getRobots().length; // Number of robots in the simulator
 
-  // Initialize map json data
-  // TODO: Refactor this part
-  // const response = executeInitializeMapJSON(simulator.generatePayload());
-  // response.then((res) => console.log(res));
-
   // ========================= SIMULATOR ACTIONS =========================
   const updateAction = useCallback(() => {
     switch (simulator.getAction()) {
@@ -111,7 +106,6 @@ const Canvas = (props: CanvasProp) => {
 
   useEffect(() => {
     if (simulatorAction === SimulatorAction.GENERATE_MAP) {
-      console.log("Generate Map");
       const response = executeGenerateMap(
         simulator
           .getLeaderRobot()
@@ -119,7 +113,7 @@ const Canvas = (props: CanvasProp) => {
       );
       response
         .then((res) => {
-          console.log(res);
+          simulator.generateMapPhaseComplete();
         })
         .catch(() => {});
     }

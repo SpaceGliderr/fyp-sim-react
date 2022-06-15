@@ -353,6 +353,10 @@ export class Simulator {
     }
   };
 
+  public generateMapPhaseComplete = () => {
+    this.setAction(SimulatorAction.NAVIGATION);
+  };
+
   public communicateWithLeader = (
     purpose: CommunicationPurpose,
     robot: Robot
