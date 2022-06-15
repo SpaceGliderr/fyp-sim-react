@@ -4,6 +4,8 @@ from typing import List
 import numpy as np
 from src.api_models import _SensorReading
 from models.point import Point
+import cv2
+import src.utils as utils
 
 class SensorReadingsPerRegion:
     def __init__(self, region_number: int, sensor_readings: List[Point]):
@@ -12,19 +14,57 @@ class SensorReadingsPerRegion:
 
 
 class Mapping:
-    def __init__(self, width: int, height: int, regions: List[List[Point]], sensor_readings: SensorReadingsPerRegion):
+    def __init__(self, width: int, height: int, number_of_regions: int, regions: List[List[Point]], sensor_readings: List[SensorReadingsPerRegion]):
         self.map_file_path = "./algorithm/controllers/mapping/map.json"
         self.width = width
         self.height = height
         self.regions = regions
         self.sensor_readings = sensor_readings
+        self.number_of_regions = number_of_regions
+        self.save_dir = "./algorithm/controllers/mapping/maps/"
 
 
-    def convert_readings_to_tuples(self, readings: List[_SensorReading]):
+    def convert_readings_to_tuples(self, readings: List[Point], toRound=True):
         points = []
         for reading in readings:
-            points.append((round(reading.reading.x, 2), round(reading.reading.y, 2)))
+            if (toRound):
+                points.append((round(reading.x), round(reading.y)))
+            else:
+                points.append((reading.x, reading.y))
         return points
+
+    
+    def convert_regions_to_tuples(self, toRound=True):
+        """Converts regions to tuples"""
+        regions = []
+
+        for region in self.regions:
+            points = []
+            for point in region:
+                if (toRound):
+                    points.append((round(point.x), round(point.y)))
+                else:
+                    points.append((point.x, point.y))
+            regions.append(points)
+        
+        return regions
+
+    
+    def convert_sensor_readings_per_region_to_dict(self, toRound=True):
+        """Converts sensor readings per region to dictionary"""
+        sensor_readings_per_region = []
+        for sensor_reading in self.sensor_readings:
+            sensor_readings_per_region.append({
+                "region_number": sensor_reading.region_number,
+                "sensor_readings": self.convert_readings_to_tuples(sensor_reading.sensor_readings, toRound)
+            })
+        
+        return sensor_readings_per_region
+
+    
+    def get_region_limits(self, region_number: int):
+        # x_min, y_min, x_max, y_max
+        return self.regions[region_number][0].x, self.regions[region_number][0].y, self.regions[region_number][2].x, self.regions[region_number][2].y
 
 
     def clear_map_json(self):
@@ -36,31 +76,42 @@ class Mapping:
         replacement_data = {
             "width": self.width,
             "height": self.height,
-            "regions": self.regions,
-            "sensor_readings": self.sensor_readings
+            "number_of_regions": self.number_of_regions,
+            "regions": self.convert_regions_to_tuples(False),
+            "sensor_readings": self.convert_sensor_readings_per_region_to_dict(False)
         }
 
         self.save_data_to_file(replacement_data)
 
 
-    def store_generated_map(self):
-        pass
-
-
-    def generate_region_map(self):
+    def generate_region_map(self, region_number: int):
         """Generates a region map from the data"""
-        pass
+        # Create a mask for the region
+        region_map = np.full((self.height + 1, self.width + 1), 255, dtype=np.uint8)
+        x_min, y_min, x_max, y_max = self.get_region_limits(region_number)
 
+        sensor_readings = self.convert_sensor_readings_per_region_to_dict()
+        
+        for reading in sensor_readings[region_number]["sensor_readings"]:
+            x, y = reading
 
-    def stitch_region_maps(self):
-        """Stitches the region maps together"""
-        pass
+            # Check if the reading is within the region
+            if (x_min <= x <= x_max and y_min <= y <= y_max):\
+                # Set the mask to 0
+                region_map[y, x] = 0
+
+        return region_map
 
     
     def generate_map(self):
         """Generates a map from the data"""
-        print("Generating map")
-        pass
+        final_map = np.full((self.height + 1, self.width + 1), 255, dtype=np.uint8)
+
+        for idx, _ in enumerate(self.regions):
+            region_map = self.generate_region_map(idx)
+            final_map = cv2.bitwise_and(final_map, region_map)
+
+        utils.save_image("final_map.png", self.save_dir, final_map)
     
     
     def save_data_to_file(self, replacement_data):

@@ -48,10 +48,8 @@ def single_robot(robot: _Robot):
 
 @app.post("/generate_map/")
 def generate_map(raw_mapping: _Mapping):
-    width, height, regions, sensor_readings_per_region = transform_mapping_api_model(raw_mapping)
-    mapping = Mapping(width, height, regions, sensor_readings_per_region)
-    try:
-        mapping.clear_map_json()
-        mapping.generate_map()
-    except Exception as e:
-        print(e)
+    width, height, number_of_regions, regions, sensor_readings_per_region = transform_mapping_api_model(raw_mapping)
+    mapping = Mapping(width, height, number_of_regions, regions, sensor_readings_per_region)
+    mapping.clear_map_json()
+    mapping.store_raw_data()
+    mapping.generate_map()
