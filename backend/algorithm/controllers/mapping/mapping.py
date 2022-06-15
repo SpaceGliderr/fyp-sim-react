@@ -1,16 +1,23 @@
-from dataclasses import replace
 import json
 from typing import List
 
 import numpy as np
-from src.api_models import _Algorithm
 from src.api_models import _SensorReading
 from models.point import Point
 
+class SensorReadingsPerRegion:
+    def __init__(self, region_number: int, sensor_readings: List[Point]):
+        self.region_number = region_number
+        self.sensor_readings = sensor_readings
+
 
 class Mapping:
-    def __init__(self):
+    def __init__(self, width: int, height: int, regions: List[List[Point]], sensor_readings: SensorReadingsPerRegion):
         self.map_file_path = "./algorithm/controllers/mapping/map.json"
+        self.width = width
+        self.height = height
+        self.regions = regions
+        self.sensor_readings = sensor_readings
 
 
     def convert_readings_to_tuples(self, readings: List[_SensorReading]):
@@ -19,67 +26,42 @@ class Mapping:
             points.append((round(reading.reading.x, 2), round(reading.reading.y, 2)))
         return points
 
-    
-    def initialize_map_json(self, algorithm: _Algorithm):
-        replacement_data = {}
 
-        with open(self.map_file_path, "r") as map_file:
-            data = json.loads(map_file.read())
+    def clear_map_json(self):
+        self.save_data_to_file("")
 
-            # Setup environment JSON
-            data["environment_details"]["width"] = algorithm.environment.width
-            data["environment_details"]["height"] = algorithm.environment.height
 
-            # Setup robots JSON
-            robotsJSON = {}
-            for robot in algorithm.robots:
-                robotsJSON[str(robot.id)] = []
+    def store_raw_data(self):
+        """"Stores raw data such as sensor readings, just in case it needs to be pre-loaded in"""
+        replacement_data = {
+            "width": self.width,
+            "height": self.height,
+            "regions": self.regions,
+            "sensor_readings": self.sensor_readings
+        }
 
-            data["robots"] = robotsJSON
-
-            replacement_data = data
-        
         self.save_data_to_file(replacement_data)
 
+
+    def store_generated_map(self):
+        pass
+
+
+    def generate_region_map(self):
+        """Generates a region map from the data"""
+        pass
+
+
+    def stitch_region_maps(self):
+        """Stitches the region maps together"""
+        pass
+
     
-    def update_robot_readings(self, robot_id: int, readings: List[_SensorReading]):
-        points = self.convert_readings_to_tuples(readings)
-
-        replacement_data = {}
-
-        print("POINTS >>>> ", points)
-
-        with open(self.map_file_path, "r") as map_file:
-            try:
-                data = json.loads(map_file.read())
-
-                # Update robot readings JSON
-                # print(data["robots"][str(robot_id)])
-                # print("POINTS >>>> ", points)
-
-                updated_readings_array = []
-
-                if (len(data["robots"][str(robot_id)]) == 0):
-                    updated_readings_array = points
-                else:
-                    # updated_readings_array = np.unique(np.concatenate((data["robots"][str(robot_id)], points)))
-                    print('AJSBFALKJSDGBAJLKBSDGLJB >>> ', np.concatenate((data["robots"][str(robot_id)], points)))
-                
-                if (len(updated_readings_array) > 0):
-                    data["robots"][str(robot_id)] = updated_readings_array
-                    print("UPDATED READINGS ARRAY >>>> ", updated_readings_array)
-
-                # data["robots"][str(robot_id)] = updated_readings_array
-
-                replacement_data = data
-
-                print(replacement_data)
-
-                self.save_data_to_file(replacement_data)
-            
-            except Exception as e:
-                print(e)
-
+    def generate_map(self):
+        """Generates a map from the data"""
+        print("Generating map")
+        pass
+    
     
     def save_data_to_file(self, replacement_data):
         # Dump data to file
