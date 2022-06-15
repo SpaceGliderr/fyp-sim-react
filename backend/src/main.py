@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from algorithm.algorithm import BaseAlgorithm
 from algorithm.arbiter import Arbiter
 from algorithm.controllers.mapping.mapping import Mapping
+from src.api_models import _Mapping
+from src.utils import transform_mapping_api_model
 from src.api_models import _Robot
 from src.api_models import _Algorithm
 
@@ -37,34 +39,17 @@ def algorithm(algorithm: _Algorithm):
     decisions = base_algorithm.makeDecisions()
     return decisions
 
+
 @app.post("/single_robot/")
 def single_robot(robot: _Robot):
     decision = Arbiter(robot)
     return decision.execute()
 
 
-@app.post("/clear_map_json/")
-def clear_map_json():
-    try:
-        utils.clear_map_json()
-    except Exception as e:
-        print(e)
-        return str(e)
-    return "successfully cleared map json"
-
-
-@app.post("/initialize_map_json/")
-def initialize_map_json(algorithm: _Algorithm):
-    mapping = Mapping()
-    try:
-        utils.clear_map_json()
-        mapping.initialize_map_json(algorithm)
-    except Exception as e:
-        print(e)
-        return str(e)
-    return "successfully initialized map json"
-
-
 @app.post("/generate_map/")
-def generate_map():
-    pass
+def generate_map(raw_mapping: _Mapping):
+    width, height, number_of_regions, regions, sensor_readings_per_region = transform_mapping_api_model(raw_mapping)
+    mapping = Mapping(width, height, number_of_regions, regions, sensor_readings_per_region)
+    mapping.clear_map_json()
+    mapping.store_raw_data()
+    mapping.generate_map()

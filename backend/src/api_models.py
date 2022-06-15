@@ -30,6 +30,7 @@ class _Robot(BaseModel):
     status: str
     front_sensor_distances: List[float]
     ir_sensors: List[_SensorReading]
+    leader_position: _Point
     current_goal: _Point = None # optional, a robot can not have a goal at a given time
     pid_metadata: _PIDMetadata # optional, pid metadata for the robot
     robots_within_signal_range: List[int] # optional, list of robots within signal range of the robot
@@ -50,3 +51,15 @@ class _PayloadTypes(Enum):
     gtg = 1 # Go To Goal payload type.
     fw = 2 # Follow Wall payload type.
     ao = 3 # Avoid Obstacle payload type.
+
+
+class _SensorReadingsPerRegion(BaseModel):
+    region_number: int
+    sensor_readings: List[_Point]
+
+class _Mapping(BaseModel):
+    width: int
+    height: int
+    number_of_regions: int
+    regions: List[List[_Point]]
+    sensor_readings_per_region: List[_SensorReadingsPerRegion]

@@ -35,6 +35,7 @@ export enum RobotStatus {
   MAPPING = "MAPPING", // When the robot is mapping
   MAPPING_COMPLETE = "MAPPING_COMPLETE", // When the robot has completed mapping
   FIND_LEADER = "FIND_LEADER", // When the robot is finding the leader
+  NAVIGATION = "NAVIGATION", // When the robot is navigating
 }
 
 export enum RobotControllers {
@@ -69,6 +70,7 @@ export type RobotConstructorArgs = {
   id: number;
   leader: boolean;
   mappingGoals: Goal[];
+  leaderPosition: Point;
   regionDetails?: { regionNumber: number; regionPoints: Point[] };
   goal?: Goal;
 };
@@ -95,22 +97,23 @@ export class Robot extends CircleObstacle {
   private previousPose: Pose;
   private robotColor: string;
   private mappingGoals: Goal[];
-  private sensorReadings: Point[][] = [];
+  private sensorReadings: Point[] = [];
   private leader: boolean = false;
   private currentController: RobotControllers = RobotControllers.GO_TO_GOAL;
+  private isCurrentlyMapping: boolean = false;
+  private leaderPosition: Point;
 
   constructor(
     vector: Vector,
     id: number,
     leader: boolean,
     mappingGoals: Goal[],
+    leaderPosition: Point,
     regionDetails?: { regionNumber: number; regionPoints: Point[] },
     goal?: Goal
   ) {
     super(vector, Robot.RADIUS);
     this.pose = new Pose(vector, MathHelper.degToRad(Math.random() * 360)); // Spawn heading is random
-    // this.pose = new Pose(vector, 1.5708);
-    // console.log("Robot theta: ", MathHelper.radToDeg(1.5708));
     this.irSensors = leader
       ? []
       : IR_SENSOR_LOCS.map((loc) => {
@@ -136,6 +139,7 @@ export class Robot extends CircleObstacle {
     this.robotColor = leader ? LEADER_ROBOT_COLOR : ROBOT_COLOR;
     this.mappingGoals = mappingGoals;
     this.leader = leader;
+    this.leaderPosition = leaderPosition;
   }
 
   public setPIDMetadata = (metadata: RobotPIDMetadata) => {
@@ -218,7 +222,7 @@ export class Robot extends CircleObstacle {
     );
 
     if (this.leader) {
-      // Change text offsets to make it look better
+      // TODO: Change text offsets to make it look better
     }
 
     CanvasHelper.drawText(
@@ -264,7 +268,15 @@ export class Robot extends CircleObstacle {
       sensor.measure(obstacles, robots, this.id);
     });
 
-    this.sensorReadings.push(this.getAllSensorReadings());
+    if (this.isCurrentlyMapping) {
+      this.sensorReadings = this.sensorReadings.concat(
+        this.getAllSensorReadings()
+      );
+    }
+  };
+
+  public getSensorReadings = () => {
+    return this.sensorReadings;
   };
 
   // Moves using differential drive mechanics
@@ -413,6 +425,7 @@ export class Robot extends CircleObstacle {
       current_controller: this.currentController,
       front_sensor_distances,
       ir_sensors,
+      leader_position: this.leaderPosition,
     };
     if (closestGoalPoint) {
       return {
@@ -541,10 +554,6 @@ export class Robot extends CircleObstacle {
         this.setStatus(RobotStatus.MAPPING);
         break;
 
-      case SimulatorAction.MAPPING_COMPLETE:
-        this.setStatus(RobotStatus.IDLE);
-        break;
-
       default:
         break;
     }
@@ -560,20 +569,75 @@ export class Robot extends CircleObstacle {
   public setCurrentController = (controller: RobotControllers) => {
     this.currentController = controller;
   };
+
+  public getIsCurrentlyMapping = () => {
+    return this.isCurrentlyMapping;
+  };
+
+  public setIsCurrentlyMapping = (isCurrentlyMapping: boolean) => {
+    this.isCurrentlyMapping = isCurrentlyMapping;
+  };
+
+  public isLeader = () => {
+    return this.leader;
+  };
 }
+
+export type SensorReadingsPerRegion = {
+  regionNumber: number;
+  sensorReadings: Point[];
+};
 
 export class LeaderRobot extends Robot {
   private numberOfRegions: number;
   private regions: Point[][];
+  private sensorReadingsPerRegion: SensorReadingsPerRegion[];
 
   constructor(
     robot: RobotConstructorArgs,
     numberOfRegions: number,
     regions: Point[][]
   ) {
-    const { vector, id, leader, regionDetails, goal } = robot;
-    super(vector, id, leader, [], regionDetails, goal);
+    const { vector, id, leader, leaderPosition, regionDetails, goal } = robot;
+    super(vector, id, leader, [], leaderPosition, regionDetails, goal);
     this.numberOfRegions = numberOfRegions;
     this.regions = regions;
+    this.sensorReadingsPerRegion = this.initSensorReadingsPerRegion();
   }
+
+  public initSensorReadingsPerRegion = () => {
+    const sensorReadingsPerRegion = [];
+    for (let i = 0; i < this.numberOfRegions; i++) {
+      sensorReadingsPerRegion.push({
+        regionNumber: i,
+        sensorReadings: [],
+      });
+    }
+    return sensorReadingsPerRegion;
+  };
+
+  public transferSensorReadingData = (robot: Robot) => {
+    this.sensorReadingsPerRegion.forEach((region) => {
+      if (robot.getId() === region.regionNumber) {
+        region.sensorReadings = robot.getSensorReadings();
+      }
+    });
+  };
+
+  public generateMappingPayload = (width: number, height: number) => {
+    return {
+      width,
+      height,
+      number_of_regions: this.numberOfRegions,
+      regions: this.regions,
+      sensor_readings_per_region: this.sensorReadingsPerRegion.map(
+        (reading) => {
+          return {
+            region_number: reading.regionNumber,
+            sensor_readings: reading.sensorReadings,
+          };
+        }
+      ),
+    };
+  };
 }

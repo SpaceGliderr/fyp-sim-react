@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CanvasProp } from "./props";
 import { CanvasHelper } from "../../utils/canvas";
-import { Simulator, SimulatorAction } from "../../game";
+import { CommunicationPurpose, Simulator, SimulatorAction } from "../../game";
 import { Map } from "../../game/map";
 import {
   GOAL_SPAWN_RATE,
@@ -15,9 +15,9 @@ import { Point } from "../../utils/coordinates";
 import {
   executeBatchAlgorithm,
   executeGenerateMap,
-  executeInitializeMapJSON,
   executeSingleRobot,
 } from "../../public/api/algorithm";
+import { RobotStatus } from "../../game/robot";
 
 const Canvas = (props: CanvasProp) => {
   const { map: m } = props;
@@ -35,20 +35,89 @@ const Canvas = (props: CanvasProp) => {
     SimulatorAction.MAPPING
   ); // First simulator action state is MAPPING procedure
   const [currentRobotId, setCurrentRobotId] = useState<number>(0); // Current robot id that is being controlled
+  const numberOfRobots = simulator.getRobots().length; // Number of robots in the simulator
 
-  // Initialize map json data
-  // TODO: Refactor this part
-  // const response = executeInitializeMapJSON(simulator.generatePayload());
-  // response.then((res) => console.log(res));
+  // ========================= SIMULATOR ACTIONS =========================
+  const updateAction = useCallback(() => {
+    switch (simulator.getAction()) {
+      case SimulatorAction.MAPPING:
+        setSimulatorAction(SimulatorAction.MAPPING);
+        break;
 
-  // const nextRobotId = useCallback(() => {
-  //   setCurrentRobotId((currentRobotId) => {
-  //     if (currentRobotId + 1 === simulator.getRobots().length) {
-  //       return 0;
-  //     }
-  //     return currentRobotId + 1;
-  //   });
-  // }, [simulator]);
+      case SimulatorAction.MAPPING_COMPLETE:
+        setSimulatorAction(SimulatorAction.MAPPING_COMPLETE);
+        break;
+
+      case SimulatorAction.GENERATE_MAP:
+        setSimulatorAction(SimulatorAction.GENERATE_MAP);
+        break;
+
+      case SimulatorAction.NAVIGATION:
+        setSimulatorAction(SimulatorAction.NAVIGATION);
+        break;
+
+      default:
+        break;
+    }
+  }, [simulator]);
+
+  const executeAction = useCallback(() => {
+    const currentRobot = simulator.getRobotById(currentRobotId);
+
+    if (simulatorAction === SimulatorAction.MAPPING) {
+      if (currentRobot.getStatus() === RobotStatus.MAPPING_COMPLETE) {
+        currentRobot.setIsCurrentlyMapping(false);
+        setCurrentRobotId((currentRobotId) => {
+          return (currentRobotId + 1) % numberOfRobots;
+        });
+      } else {
+        currentRobot.setIsCurrentlyMapping(true);
+
+        const response = executeSingleRobot(currentRobot.generatePayload());
+        response
+          .then((res) => {
+            currentRobot.execute(res);
+          })
+          .catch(() => {});
+      }
+
+      simulator.mapping();
+    } else if (simulatorAction === SimulatorAction.MAPPING_COMPLETE) {
+      if (currentRobot.getStatus() === RobotStatus.FIND_LEADER) {
+        const response = executeSingleRobot(currentRobot.generatePayload());
+        response
+          .then((res) => {
+            currentRobot.execute(res);
+          })
+          .catch(() => {});
+        simulator.communicateWithLeader(
+          CommunicationPurpose.GIVE_SENSOR_READINGS,
+          currentRobot
+        );
+      } else {
+        setCurrentRobotId((currentRobotId) => {
+          return (currentRobotId + 1) % numberOfRobots;
+        });
+      }
+
+      simulator.mappingComplete();
+    }
+  }, [simulator, simulatorAction, currentRobotId, numberOfRobots]);
+
+  useEffect(() => {
+    if (simulatorAction === SimulatorAction.GENERATE_MAP) {
+      const response = executeGenerateMap(
+        simulator
+          .getLeaderRobot()
+          .generateMappingPayload(simulator.getWidth(), simulator.getHeight())
+      );
+      response
+        .then((res) => {
+          simulator.generateMapPhaseComplete();
+        })
+        .catch(() => {});
+    }
+  }, [simulatorAction, simulator]);
 
   // ========================= ENVIRONMENT RENDERING =========================
   // Declare canvas references
@@ -105,31 +174,14 @@ const Canvas = (props: CanvasProp) => {
       // Check for robot goals
       simulator.checkRobotGoals();
 
-      // Check for mapping
-      if (simulatorAction === SimulatorAction.MAPPING) {
-        simulator.mapping();
-      }
-
-      // Execute algorithm
-      // TODO: Uncomment once it is debugged
-      // const response = executeBatchAlgorithm(simulator.generatePayload());
-
-      // response.then((res) => simulator.execute(res)).catch(() => {});
-
-      const response = executeSingleRobot(
-        simulator.getRobots()[2].generatePayload()
-      );
-
-      response
-        .then((res) => {
-          simulator.getRobots()[2].execute(res);
-        })
-        .catch(() => {});
+      // Execute Algorithm
+      executeAction();
+      updateAction();
     }, TICKS_PER_UPDATE);
 
     // Unmount ticker
     return () => clearInterval(ticker);
-  }, [simulator, simulatorAction]);
+  }, [simulator, simulatorAction, executeAction, updateAction]);
 
   // This useEffect hook will act as the sensor reading loop for the robots
   useEffect(() => {
@@ -179,34 +231,6 @@ const Canvas = (props: CanvasProp) => {
       };
     }
   }, [spawnerWorker, simulator]);
-
-  // ========================= SIMULATOR ACTIONS =========================
-  useEffect(() => {
-    switch (simulator.getAction()) {
-      case SimulatorAction.MAPPING:
-        setSimulatorAction(SimulatorAction.MAPPING);
-        break;
-
-      case SimulatorAction.MAPPING_COMPLETE:
-        setSimulatorAction(SimulatorAction.MAPPING_COMPLETE);
-        break;
-
-      case SimulatorAction.NAVIGATION:
-        setSimulatorAction(SimulatorAction.NAVIGATION);
-        break;
-
-      default:
-        break;
-    }
-  }, [simulator]);
-
-  useEffect(() => {
-    if (simulatorAction === SimulatorAction.MAPPING_COMPLETE) {
-      // Navigate to leader robot position
-      const response = executeGenerateMap({});
-      response.then(() => simulator.mapGenerated());
-    }
-  }, [simulatorAction, simulator]);
 
   return (
     <div>

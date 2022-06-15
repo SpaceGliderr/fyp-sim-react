@@ -1,6 +1,11 @@
 import json
+import os
 from posixpath import dirname
 from typing import List
+
+import cv2
+from algorithm.controllers.mapping.mapping import SensorReadingsPerRegion
+from src.api_models import _Mapping
 from src.api_models import _Robot
 from models.point import Point
 from models.pose import Pose
@@ -41,17 +46,34 @@ def transform_robot_api_model(robot: _Robot):
     if (len(robot.mapping_goals) > 0):
         for goal in robot.mapping_goals:
             mapping_goals.append(Point(goal.x, goal.y))
+
+    leader_position = Point(robot.leader_position.x, robot.leader_position.y)
     
-    return robot.id, pose, robot.sensor_readings, current_goal, robot.pid_metadata, robot.robots_within_signal_range, mapping_goals, robot.status, transform_sensor_readings(robot.ir_sensors), robot.front_sensor_distances
+    return robot.id, pose, robot.sensor_readings, current_goal, robot.pid_metadata, robot.robots_within_signal_range, mapping_goals, robot.status, transform_sensor_readings(robot.ir_sensors), robot.front_sensor_distances, leader_position
 
 
-def clear_map_json():    
-    # Load map_template.json file
-    template_file = open("./algorithm/controllers/mapping/template_map.json")
-    template = json.load(template_file)
+def transform_mapping_api_model(mapping: _Mapping):
+    sensor_readings_per_region: List[SensorReadingsPerRegion] = []
 
-    # Replace map.json file with template data
-    with open('./algorithm/controllers/mapping/map.json', 'w') as map_file:
-        map_file.write(json.dumps(template))
+    for sensor_readings in mapping.sensor_readings_per_region:
+        
+        readings = []
+        for reading in sensor_readings.sensor_readings:
+            readings.append(Point(reading.x, reading.y))
+        
+        sensor_readings_per_region.append(SensorReadingsPerRegion(sensor_readings.region_number, readings))
 
-    template_file.close()
+    regions = []
+    for region in mapping.regions:
+        points = []
+
+        for point in region:
+            points.append(Point(point.x, point.y))
+
+        regions.append(points)
+
+    return mapping.width, mapping.height, mapping.number_of_regions, regions, sensor_readings_per_region
+
+
+def save_image(name: str, dir: str, content):
+    cv2.imwrite(f'{dir}{name}', content)

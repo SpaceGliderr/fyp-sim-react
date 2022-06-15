@@ -1,5 +1,5 @@
 import combinations from "combinations";
-import { concat, filter, findIndex } from "lodash";
+import { concat, filter, findIndex, includes } from "lodash";
 import { Collision } from "../utils/collision";
 import { Point } from "../utils/coordinates";
 import { Goal } from "./goal";
@@ -10,7 +10,13 @@ import { AlgorithmPayload, LeaderRobot, Robot, RobotStatus } from "./robot";
 export enum SimulatorAction {
   MAPPING = "MAPPING",
   MAPPING_COMPLETE = "MAPPING_COMPLETE",
+  GENERATE_MAP = "GENERATE_MAP",
   NAVIGATION = "NAVIGATION",
+}
+
+export enum CommunicationPurpose {
+  GIVE_SENSOR_READINGS = "GIVE_SENSOR_READINGS",
+  PATH_PLAN = "PATH_PLAN",
 }
 
 export class Simulator {
@@ -22,6 +28,8 @@ export class Simulator {
   private leaderRobot: LeaderRobot;
   private action: SimulatorAction = SimulatorAction.MAPPING; // Default after initializing is mapping
   private mappingGoals: MappingGoal[];
+  private width: number;
+  private height: number;
 
   constructor(map: Map) {
     const {
@@ -33,7 +41,11 @@ export class Simulator {
       leaderRobotStartPosition,
       numberOfRegions,
       mappingGoals,
+      width,
+      height,
     } = map.unpack();
+    this.width = width;
+    this.height = height;
     this.goals = goals ?? [];
     this.mappingGoals = mappingGoals;
     this.robots = robotStartPositions.map((position, robotId) => {
@@ -44,6 +56,7 @@ export class Simulator {
           robotId,
           false,
           this.getMappingGoals(robotId),
+          leaderRobotStartPosition,
           {
             regionNumber: robotId,
             regionPoints: regions[robotId],
@@ -57,6 +70,7 @@ export class Simulator {
         robotId,
         false,
         this.getMappingGoals(robotId),
+        leaderRobotStartPosition,
         {
           regionNumber: robotId,
           regionPoints: regions[robotId],
@@ -75,6 +89,7 @@ export class Simulator {
         ),
         id: -1,
         leader: true,
+        leaderPosition: leaderRobotStartPosition,
         mappingGoals: [],
       },
       numberOfRegions,
@@ -294,8 +309,71 @@ export class Simulator {
 
     this.checkRobotMappingGoals();
 
-    if (this.mappingGoals.length === 0) {
+    if (this.isMappingGoalsComplete()) {
+      this.robots.forEach((robot) => {
+        robot.setIsCurrentlyMapping(false);
+      });
+
+      this.mappingPhaseComplete();
+
       this.setAction(SimulatorAction.MAPPING_COMPLETE);
+    }
+  };
+
+  public isMappingGoalsComplete = () => {
+    let isComplete = false;
+
+    this.mappingGoals.forEach((mappingGoal) => {
+      isComplete = mappingGoal.goals.length === 0;
+    });
+
+    return isComplete;
+  };
+
+  public mappingPhaseComplete = () => {
+    this.robots.forEach((robot) => {
+      if (
+        includes(robot.getRobotsWithinSignalRange(), this.leaderRobot.getId())
+      ) {
+        this.leaderRobot.transferSensorReadingData(robot);
+        robot.setStatus(RobotStatus.MAPPING_COMPLETE);
+        return;
+      }
+      robot.setStatus(RobotStatus.FIND_LEADER);
+    });
+  };
+
+  public mappingComplete = () => {
+    if (
+      this.robots.every((robot) => {
+        return robot.getStatus() === RobotStatus.MAPPING_COMPLETE;
+      })
+    ) {
+      this.setAction(SimulatorAction.GENERATE_MAP);
+    }
+  };
+
+  public generateMapPhaseComplete = () => {
+    this.setAction(SimulatorAction.NAVIGATION);
+  };
+
+  public communicateWithLeader = (
+    purpose: CommunicationPurpose,
+    robot: Robot
+  ) => {
+    switch (purpose) {
+      case CommunicationPurpose.GIVE_SENSOR_READINGS:
+        if (
+          includes(robot.getRobotsWithinSignalRange(), this.leaderRobot.getId())
+        ) {
+          this.leaderRobot.transferSensorReadingData(robot);
+          robot.setStatus(RobotStatus.MAPPING_COMPLETE);
+        }
+        break;
+      case CommunicationPurpose.PATH_PLAN:
+        break;
+      default:
+        break;
     }
   };
 
@@ -305,5 +383,13 @@ export class Simulator {
 
   public getAction = () => {
     return this.action;
+  };
+
+  public getWidth = () => {
+    return this.width;
+  };
+
+  public getHeight = () => {
+    return this.height;
   };
 }

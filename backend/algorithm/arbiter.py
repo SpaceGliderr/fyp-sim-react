@@ -38,9 +38,8 @@ payload_type_dictionary = {
 # The arbiter class is a decision making class that decides the next move for the robot.
 class Arbiter:
     def __init__(self, robot: _Robot) -> None:
-        id, pose, sensor_readings, current_goal, pid_metadata, robots_within_signal_range, mapping_goals, status, ir_sensors, front_sensor_distances = transform_robot_api_model(robot)
-        self.robot = Robot(id, pose, sensor_readings, mapping_goals, status, ir_sensors, front_sensor_distances, current_goal, pid_metadata, robots_within_signal_range)
-        self.mapping = Mapping()
+        id, pose, sensor_readings, current_goal, pid_metadata, robots_within_signal_range, mapping_goals, status, ir_sensors, front_sensor_distances, leader_position = transform_robot_api_model(robot)
+        self.robot = Robot(id, pose, sensor_readings, mapping_goals, status, ir_sensors, front_sensor_distances, leader_position, current_goal, pid_metadata, robots_within_signal_range)
 
         # Declare the controllers
         self.go_to_goal = GoToGoal(self.robot.pose, Point(1.0, 0.0), self.robot.pid_metadata)
@@ -94,6 +93,8 @@ class Arbiter:
         if self.robot.status == "MAPPING":
             if len(self.robot.mapping_goals) > 0:
                 self.update_goal_of_controllers(self.robot.mapping_goals[0])
+        elif self.robot.status == "FIND_LEADER":
+            self.update_goal_of_controllers(self.robot.leader_position)
         elif self.robot.current_goal is not None:
             self.update_goal_of_controllers(self.robot.current_goal)
 
@@ -102,17 +103,17 @@ class Arbiter:
         """
         Determines the state of the robot, whether it is in danger or not. And adjusts the controllers accordingly.
         """
-        print(self.robot.front_sensor_distances)
         if self.robot.status == "COLLISION" or self.close_to_obstacle():
             self.update_controller(ControllerType.AVOID_OBSTACLES)
         elif self.robot.current_goal is not None or len(self.robot.mapping_goals) > 0:
+            self.update_controller(ControllerType.GO_TO_GOAL)
+        elif self.robot.status == "FIND_LEADER":
             self.update_controller(ControllerType.GO_TO_GOAL)
 
 
     def execute(self) -> None:
         self.determine_goal()
         self.determine_controller()
-        # print(self.controller)
         steering_input, pid_metadata = self.controller.calculate_steering_inputs()
 
         self.payload['payload'] = {
