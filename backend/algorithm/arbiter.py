@@ -40,7 +40,6 @@ class Arbiter:
     def __init__(self, robot: _Robot) -> None:
         id, pose, sensor_readings, current_goal, pid_metadata, robots_within_signal_range, mapping_goals, status, ir_sensors, front_sensor_distances, leader_position = transform_robot_api_model(robot)
         self.robot = Robot(id, pose, sensor_readings, mapping_goals, status, ir_sensors, front_sensor_distances, leader_position, current_goal, pid_metadata, robots_within_signal_range)
-        self.mapping = Mapping()
 
         # Declare the controllers
         self.go_to_goal = GoToGoal(self.robot.pose, Point(1.0, 0.0), self.robot.pid_metadata)
