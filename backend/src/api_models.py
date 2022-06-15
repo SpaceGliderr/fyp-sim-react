@@ -60,5 +60,6 @@ class _SensorReadingsPerRegion(BaseModel):
 class _Mapping(BaseModel):
     width: int
     height: int
+    number_of_regions: int
     regions: List[List[_Point]]
     sensor_readings_per_region: List[_SensorReadingsPerRegion]

@@ -617,7 +617,6 @@ export class LeaderRobot extends Robot {
   };
 
   public transferSensorReadingData = (robot: Robot) => {
-    console.log("Data Transferred Successfully >>> ", robot.getId());
     this.sensorReadingsPerRegion.forEach((region) => {
       if (robot.getId() === region.regionNumber) {
         region.sensorReadings = robot.getSensorReadings();
@@ -629,6 +628,7 @@ export class LeaderRobot extends Robot {
     return {
       width,
       height,
+      number_of_regions: this.numberOfRegions,
       regions: this.regions,
       sensor_readings_per_region: this.sensorReadingsPerRegion.map(
         (reading) => {
