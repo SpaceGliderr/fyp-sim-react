@@ -51,3 +51,14 @@ class _PayloadTypes(Enum):
     gtg = 1 # Go To Goal payload type.
     fw = 2 # Follow Wall payload type.
     ao = 3 # Avoid Obstacle payload type.
+
+
+class _SensorReadingsPerRegion(BaseModel):
+    region_number: int
+    sensor_readings: List[_Point]
+
+class _Mapping(BaseModel):
+    width: int
+    height: int
+    regions: List[List[_Point]]
+    sensor_readings_per_region: List[_SensorReadingsPerRegion]
