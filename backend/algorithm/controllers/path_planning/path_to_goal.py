@@ -9,6 +9,7 @@ from node import AStarNode
 import sys
 
 
+# TODO: Remove Point, Pose, Region once algorithm is implemented finished
 class Point:
     def __init__(self, x: float, y: float) -> None:
         self.x = x
@@ -98,9 +99,35 @@ class Region:
         self.id = id
         self.points = points
         self.connected_region_ids = connected_region_ids
-        self.entry_points = entry_points
+        self.entry_points = self.generate_entry_point_dict_array(entry_points)
         self.start_point = self.points[0]
-        self.end_point = self.points[3]
+        self.end_point = self.points[2]
+
+
+    def generate_entry_point_dict_array(self, entry_points: List[Point]):
+        """
+        Generates a dictionary of entry points
+        """
+        entry_point_dict_array = []
+
+        for idx, entry_point in enumerate(entry_points):
+            entry_point_dict = {}
+
+            entry_point_dict["region_id"] = self.connected_region_ids[idx]
+            entry_point_dict["entry_point"] = entry_point
+
+            entry_point_dict_array.append(entry_point_dict)
+
+        return entry_point_dict_array
+
+
+    def get_entry_point(self, region_id: int):
+        """
+        Returns the entry point of a region
+        """
+        for entry_point in self.entry_points:
+            if entry_point["region_id"] == region_id:
+                return entry_point["entry_point"]
 
 
     def is_point_within_region(self, point: Point):
@@ -110,25 +137,32 @@ class Region:
         return point.x >= self.start_point.x and point.x <= self.end_point.x and point.y >= self.start_point.y and point.y <= self.end_point.y
 
     
-    def is_connected_to_region_id(self, region_id: int):
+    def is_connected_to_region(self, region):
         """
         Checks if the region is connected to a region with the given id
         """
-        return region_id in self.connected_region_ids
+        return region.id in self.connected_region_ids
 
 
 class PathToGoal:
     def __init__(self, initial_pose: Pose, goal_point: Point):
         np.set_printoptions(threshold=sys.maxsize)
 
+        # Initialize constructor variables
         self.initial_pose = initial_pose
         self.goal_point = goal_point
 
+        # Initialize final map array and associated metadata
         self.final_map_path = "./algorithm/controllers/mapping/maps/final_map.png"
         self.final_map = cv2.imread(self.final_map_path, cv2.IMREAD_GRAYSCALE)
         self.width = self.final_map.shape[1]
         self.height = self.final_map.shape[0]
+
+        # Initialize window related variables
         self.window_size = int(14 + 3)
+        self.window_mask = np.pad(np.full((30, 30), 255, dtype=np.uint8), 2, mode="constant")
+
+        # Initialize A* variables
         self.actions = [
             Point(-1, -1),
             Point(0, -1),
@@ -139,49 +173,34 @@ class PathToGoal:
             Point(-1, 1),
             Point(-1, 0)
         ]
-
         self.number_of_nodes = 0
         self.number_of_expansions = 0
 
-        self.save_dir = "./algorithm/controllers/path_planning/"
-        # self.window_mask_path = self.save_dir + "window_mask.png"
-        # self.window_mask = cv2.imread(self.window_mask_path, cv2.IMREAD_GRAYSCALE)
-        # print(self.window_mask)
-        # cv2.imwrite(f"{self.save_dir}window_mask.png", self.mask)
-        self.window_mask = np.pad(np.full((30, 30), 255, dtype=np.uint8), 2, mode="constant")
-        self.window_mask_path = self.save_dir + "window_mask_2.png"
-
+        # Initialize regions
         self.regions = [
             Region(0, [
                 Point(0, 0),
-                Point(420, 0),
-                Point(420, 640),
+                Point(480, 0),
+                Point(480, 640),
                 Point(0, 640)
             ], [Point(480, 470)], [1]),
             Region(1, [
-                Point(420, 0),
+                Point(480, 0),
                 Point(840, 0),
                 Point(840, 640),
-                Point(420, 640)
+                Point(480, 640)
             ], [Point(480, 470)], [0])
         ]
 
+        # Initialize miscellaneous variables
+        self.save_dir = "./algorithm/controllers/path_planning/"
 
-    def get_region_id_from_point(self, point: Point):
+
+    def get_region_from_point(self, point: Point):
         """
-        Returns the region id of the region containing the point
+        Returns the region containing the point
         """
-        for region in self.regions:
-            if region.is_point_within_region(point):
-                return region.id
-
-
-    # def region_is_connected(self, region_id: int):
-    #     """
-    #     Returns True if the region is connected to another region
-    #     """
-    #     for region in self.regions:
-    #         return region.is_connected_to_region_id(region_id)
+        return list(filter(lambda x: x.is_point_within_region(point), self.regions))[0]
 
     
     def is_point_valid(self, point: Point):
@@ -189,12 +208,8 @@ class PathToGoal:
         Returns True if the point is valid
         """
         window = self.get_window(point)
-        # print(window)
         inverse_window = cv2.bitwise_not(window)
-        # print(inverse_window)
         result = cv2.bitwise_and(inverse_window, self.window_mask)
-        # print(result)
-        # Means the point is invalid
         return not np.sum(result) >= 255
 
 
@@ -236,55 +251,18 @@ class PathToGoal:
             end_y = abs(self.height - y_max)
             y_max = self.height
         
-        # print(x_min, y_min, x_max, y_max)
-        # print(start_x, start_y, end_x, end_y)
-        # print(self.final_map[y_min:y_max, x_min:x_max])
         window[start_y:end_y, start_x:end_x] = self.final_map[y_min:y_max, x_min:x_max]
-        # print(window)
 
         return window
-
-        # diff_x = 0
-        # diff_y = 0
-
-        # if (x_min < 0):
-        #     diff_x = abs(x_min)
-        #     x_min = 0
-        # if (y_min < 0):
-        #     diff_y = abs(y_min)
-        #     y_min = 0
-        # if (x_max > self.width):
-        #     diff_x = abs(self.width - x_max)
-        #     x_max = self.width
-        # if (y_max > self.height):
-        #     diff_y = abs(self.height - y_max)
-        #     y_max = self.height
-
-        # offset_x = self.window_size - diff_x
-
-        # y_oob = diff_y * self.window_size
-        # x_oob = diff_x * offset_x
-        # oob = y_oob + x_oob
-
-        # window = self.final_map[y_min : y_max, x_min : x_max]
-        # # print(window.shape)
-        # return window, oob
 
 
     def calculate_path_cost(self, point: Point):
         """
         Calculates the path cost of moving from one node to another
         """
-        # window, oob = self.get_window(point)
         window = self.get_window(point)
-
         inverse_window = cv2.bitwise_not(window)
-
-        # NOTE: We can update the path cost here by adding weights to a mask
-        # path_cost = np.sum(inverse_window) + (oob * 255)
-        path_cost = np.sum(inverse_window)
-        
-        return path_cost
+        return np.sum(inverse_window)
 
 
     def get_total_cost(self, p1: Point, p2: Point):
@@ -321,7 +299,7 @@ class PathToGoal:
         return children
 
 
-    def a_star(self):
+    def a_star(self, start_point: Point, goal_point: Point):
         """
         Executes the A* algorithm
         """
@@ -334,83 +312,14 @@ class PathToGoal:
         self.number_of_nodes += 1
 
         # initial path cost of g is 0
-        initial_f = self.calculate_euclidean_distance(self.initial_pose.point, self.goal_point)
-        frontier.append(AStarNode(self.number_of_nodes, self.number_of_expansions, self.initial_pose.point, initial_f))
+        initial_f = self.calculate_euclidean_distance(start_point, goal_point)
+        frontier.append(AStarNode(self.number_of_nodes, self.number_of_expansions, start_point, initial_f))
 
-        # Goal test before expansion
-        # if frontier[0].point == self.goal_point:
-        #     goal_node = frontier[0]
-        #     break
-
-        # Get children paths of the first frontier element
-        # children = self.expand_and_return_children(frontier[0])
-        # frontier[0].add_children(children)
-        # print([(c.point.x, c.point.y) for c in frontier[0].children])
-
-        # # Put the first element of the frontier to the explored array
-        # explored.append(frontier[0])
-        # print(explored)
-
-        # # Remove the first element of the frontier
-        # del frontier[0]
-        # print(frontier)
-
-        # for child in children:
-        #     if not (child.point in [e.point for e in explored] and not (child.point in [f.point for f in frontier])):
-        #         child.f = self.get_total_cost(child.point, self.goal_point)
-        #         frontier.append(child)
-        #     else:
-        #         child.removed = True
-        #         removed.append(child)
-
-        # print([c.f for c in children])
-
-        # # # Sort the frontier by the F cost
-        # frontier.sort(key=lambda x: x.f)
-        # print([(f.point.x, f.point.y, f.f) for f in frontier])
-
-        # for f in frontier:
-        #     print(f.__str__())
-
-        # if (frontier[0].point.equal(Point(259, 441))):
-        #     print("Goal found")
-
-        # for i in range(0, 10):
-        #     print("Frontier: " + frontier[0].point.unpack())
-
-        #     children = self.expand_and_return_children(frontier[0])
-        #     print("Children: ", [(c.point.x, c.point.y) for c in frontier[0].children])
-            
-        #     frontier[0].add_children(children)
-        #     print("Frontier Children: ", [(c.point.x, c.point.y) for c in frontier[0].children])
-
-        #     explored.append(frontier[0])
-        #     print("Explored: ", [(e.point.x, e.point.y) for e in explored])
-
-        #     del frontier[0]
-        #     print("New Frontier: ", [(f.point.x, f.point.y) for f in frontier])
-
-        #     for child in children:
-        #         if not (child.point in [e.point for e in explored] and not (child.point in [f.point for f in frontier])):
-        #             child.f = self.get_total_cost(child.point, self.goal_point)
-        #             frontier.append(child)
-        #         else:
-        #             child.removed = True
-        #             removed.append(child)
-
-        #     frontier.sort(key=lambda x: x.f)
-        #     print([(f.point.x, f.point.y, f.f) for f in frontier])
-
-        # for _ in range(0, 1):
         while not is_goal_found:
             # Goal test before expansion
-            if frontier[0].point.equal(self.goal_point):
+            if frontier[0].point.equal(goal_point):
                 goal_node = frontier[0]
                 break
-
-            print(f"Frontier: {frontier[0].point.unpack()} {frontier[0].f}")
-            # if np.any([frontier[0].point.equal(e.point) for e in explored]):
-            #     print("INFINITE LOOP")
 
             # Get children paths of the first frontier element
             children = self.expand_and_return_children(frontier[0])
@@ -423,35 +332,15 @@ class PathToGoal:
             del frontier[0]
 
             for child in children:
-                # print(np.any([child.point.equal(e.point) for e in explored]))
                 if not np.any([child.point.equal(e.point) for e in explored]) and not np.any([child.point.equal(f.point) for f in frontier]):
-                    # child.f = self.get_total_cost(child.point, self.goal_point)
-                    child.f = self.calculate_euclidean_distance(child.point, self.goal_point)
-
+                    child.f = self.get_total_cost(child.point, goal_point)
                     frontier.append(child)
                 else:
-                    # print("HARLOW?")
                     child.removed = True
                     removed.append(child)
 
             # Sort the frontier by the F cost
             frontier.sort(key=lambda x: x.f)
-
-            # print("NEW ITERATION >>> ")
-            # for f in frontier:
-            #     print(f.__str__())
-
-        # TODO: Uncomment this when done
-        # path = [goal_node.point]
-        # while goal_node.parent is not None:
-        #     path.insert(0, goal_node.parent)
-        #     for explored_node in explored:
-        #         if explored_node.point.equal(goal_node.parent):
-        #             goal_node = explored_node
-        #             break
-        
-        # print([p.unpack() for p in path])
-
 
         # # Get the path from the goal node
         path = [goal_node.point]
@@ -461,10 +350,6 @@ class PathToGoal:
                 if explored_node.point == goal_node.parent:
                     goal_node = explored_node
                     break
-
-        # print("DONE >>> ", goal_node.point.unpack())
-        # print("GOAL >>> ", goal_node.parent.unpack())
-        # print("Path: ", [(p.x, p.y) for p in path])
 
         return path
 
@@ -485,21 +370,44 @@ class PathToGoal:
         """
         Executes the regional A* algorithm
         """
-        point_regions = [
-            self.get_region_id_from_point(self.initial_pose.point),
-            self.get_region_id_from_point(self.goal_point)
-        ]
+        initial_pose_region = self.get_region_from_point(self.initial_pose.point),
+        initial_pose_region = initial_pose_region[0]
+        goal_point_region = self.get_region_from_point(self.goal_point)
+
+        connected_regions = []
+        navigation_points = []
+
+        if initial_pose_region.id == goal_point_region.id:
+            navigation_points = [self.initial_pose.point, self.goal_point]
+        elif initial_pose_region.is_connected_to_region(goal_point_region):
+            connecting_point = initial_pose_region.get_entry_point(goal_point_region.id)
+            navigation_points = [self.initial_pose.point, connecting_point, self.goal_point]
+        else:
+            # TODO: Handle different regions that are not connected
+            pass
+        
+        navigation_paths = []
+
+        for idx, point in enumerate(navigation_points):
+            # Last point is the goal, therefore it is not counted
+            if idx == len(navigation_points) - 1:
+                break
+            
+            end_point = navigation_points[idx + 1]
+
+            # Trigger the A Star algorithm
+            path = self.a_star(point, end_point)
+
+            # Add the path to the navigation paths
+            navigation_paths.append(path)
+
+        # TODO: Remove this once the algorithm is fully implemented
+        # Visualize the navigation paths
+        self.visualize(list(np.concatenate(navigation_paths).flat))
 
 
+# TODO: Remove this once the path planning is fully implemented
 if __name__ == "__main__":
     # Test execution of A star algorithm on the final map
-    path_to_goal = PathToGoal(Pose(Point(170, 50), 0), Point(460, 480))
-    path = path_to_goal.a_star()
-    path_to_goal.visualize(path)
-    # print(path_to_goal.is_point_valid(Point(225, 40)))
-    # path_to_goal.get_window(Point(170, 50))
-
-    # window, oob = path_to_goal.get_window(Point(0, 0))
-
-    # print(window)
-    # print(oob)
+    path_to_goal = PathToGoal(Pose(Point(170, 50), 0), Point(540, 40))
+    path_to_goal.execute()
