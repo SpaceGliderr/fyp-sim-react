@@ -1,6 +1,7 @@
 import { Point } from "../utils/coordinates";
 import { Goal } from "./goal";
 import { DynamicObstacle, PolygonObstacle } from "./obstacles";
+import { Region } from "./region";
 
 export type MappingGoal = {
   goals: Goal[];
@@ -15,7 +16,7 @@ export type MapTemplate = {
   staticObstacles: PolygonObstacle[];
   dynamicObstacles?: DynamicObstacle[]; // A map may or may not have dynamic obstacles
   goals?: Goal[]; // A map may or may not have goals
-  regions: Point[][]; // A map has more than one regions
+  regions: Region[]; // A map has more than one regions
   numberOfRegions: number; // Number of regions for the map
   leaderRobotStartPosition: Point; // Starting position for the leader robot
   mappingGoals: MappingGoal[]; // Goals for the mapping phase
@@ -29,7 +30,7 @@ export class Map {
   private width: number;
   private height: number;
   private goals?: Goal[] = [];
-  private regions: Point[][] = [];
+  private regions: Region[];
   private numberOfRegions: number;
   private leaderRobotStartPosition: Point;
   private mappingGoals: MappingGoal[];

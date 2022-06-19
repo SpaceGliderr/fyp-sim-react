@@ -57,10 +57,7 @@ export class Simulator {
           false,
           this.getMappingGoals(robotId),
           leaderRobotStartPosition,
-          {
-            regionNumber: robotId,
-            regionPoints: regions[robotId],
-          },
+          regions[robotId],
           this.getGoal(robotId)
         );
       }
@@ -71,10 +68,7 @@ export class Simulator {
         false,
         this.getMappingGoals(robotId),
         leaderRobotStartPosition,
-        {
-          regionNumber: robotId,
-          regionPoints: regions[robotId],
-        },
+        regions[robotId],
         undefined
       );
     });

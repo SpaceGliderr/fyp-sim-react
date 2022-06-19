@@ -5,6 +5,7 @@ import { Line, Point, Pose, Vector } from "../utils/coordinates";
 import { MathHelper } from "../utils/math";
 import { Goal } from "./goal";
 import { CircleObstacle, PolygonObstacle } from "./obstacles";
+import { Region } from "./region";
 import { IRSensor, USSensor } from "./sensor";
 import {
   CLOSE_DISTANCE_IN_PX,
@@ -71,7 +72,7 @@ export type RobotConstructorArgs = {
   leader: boolean;
   mappingGoals: Goal[];
   leaderPosition: Point;
-  regionDetails?: { regionNumber: number; regionPoints: Point[] };
+  region?: Region;
   goal?: Goal;
 };
 
@@ -92,8 +93,7 @@ export class Robot extends CircleObstacle {
   };
   private signal: Signal;
   private robotsWithinSignalRange: number[] = [];
-  private regionNumber?: number;
-  private regionPoints?: Point[];
+  private region?: Region;
   private previousPose: Pose;
   private robotColor: string;
   private mappingGoals: Goal[];
@@ -109,7 +109,7 @@ export class Robot extends CircleObstacle {
     leader: boolean,
     mappingGoals: Goal[],
     leaderPosition: Point,
-    regionDetails?: { regionNumber: number; regionPoints: Point[] },
+    region?: Region,
     goal?: Goal
   ) {
     super(vector, Robot.RADIUS);
@@ -133,8 +133,7 @@ export class Robot extends CircleObstacle {
     this.currentGoal = goal;
     this.id = id;
     this.signal = new Signal(vector);
-    this.regionNumber = regionDetails?.regionNumber;
-    this.regionPoints = regionDetails?.regionPoints;
+    this.region = region;
     this.previousPose = this.pose;
     this.robotColor = leader ? LEADER_ROBOT_COLOR : ROBOT_COLOR;
     this.mappingGoals = mappingGoals;
@@ -590,16 +589,16 @@ export type SensorReadingsPerRegion = {
 
 export class LeaderRobot extends Robot {
   private numberOfRegions: number;
-  private regions: Point[][];
+  private regions: Region[];
   private sensorReadingsPerRegion: SensorReadingsPerRegion[];
 
   constructor(
     robot: RobotConstructorArgs,
     numberOfRegions: number,
-    regions: Point[][]
+    regions: Region[]
   ) {
-    const { vector, id, leader, leaderPosition, regionDetails, goal } = robot;
-    super(vector, id, leader, [], leaderPosition, regionDetails, goal);
+    const { vector, id, leader, leaderPosition, region, goal } = robot;
+    super(vector, id, leader, [], leaderPosition, region, goal);
     this.numberOfRegions = numberOfRegions;
     this.regions = regions;
     this.sensorReadingsPerRegion = this.initSensorReadingsPerRegion();
@@ -629,7 +628,15 @@ export class LeaderRobot extends Robot {
       width,
       height,
       number_of_regions: this.numberOfRegions,
-      regions: this.regions,
+      regions: this.regions.map((region) => {
+        const { id, points, entryPoints, connectedRegionIds } = region.unpack();
+        return {
+          id,
+          points,
+          entry_points: entryPoints,
+          connected_region_ids: connectedRegionIds,
+        };
+      }),
       sensor_readings_per_region: this.sensorReadingsPerRegion.map(
         (reading) => {
           return {
