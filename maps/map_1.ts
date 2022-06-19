@@ -1,6 +1,7 @@
 import { Goal, GoalShape } from "../game/goal";
 import { MapTemplate } from "../game/map";
 import { PolygonObstacle } from "../game/obstacles";
+import { Region } from "../game/region";
 import { Point } from "../utils/coordinates";
 
 // ========================= DESCRIPTION OF THE MAP =========================
@@ -289,30 +290,50 @@ export const MAP_1: MapTemplate = {
     ),
   ],
   regions: [
-    [
-      new Point(0, 0),
-      new Point(700, 0),
-      new Point(700, 560),
-      new Point(0, 560),
-    ],
-    [
-      new Point(700, 0),
-      new Point(1400, 0),
-      new Point(1400, 400),
-      new Point(700, 400),
-    ],
-    [
-      new Point(700, 400),
-      new Point(1400, 400),
-      new Point(1400, 900),
-      new Point(700, 900),
-    ],
-    [
-      new Point(0, 560),
-      new Point(700, 560),
-      new Point(700, 900),
-      new Point(0, 900),
-    ],
+    new Region(
+      0,
+      [
+        new Point(0, 0),
+        new Point(700, 0),
+        new Point(700, 560),
+        new Point(0, 560),
+      ],
+      [new Point(700, 400), new Point(700, 400), new Point(640, 560)],
+      [1, 2, 3]
+    ),
+    new Region(
+      1,
+      [
+        new Point(700, 0),
+        new Point(1400, 0),
+        new Point(1400, 400),
+        new Point(700, 400),
+      ],
+      [new Point(700, 400), new Point(700, 400)],
+      [0, 2]
+    ),
+    new Region(
+      2,
+      [
+        new Point(700, 400),
+        new Point(1400, 400),
+        new Point(1400, 900),
+        new Point(700, 900),
+      ],
+      [new Point(700, 400), new Point(700, 400), new Point(700, 620)],
+      [0, 1, 3]
+    ),
+    new Region(
+      3,
+      [
+        new Point(0, 560),
+        new Point(700, 560),
+        new Point(700, 900),
+        new Point(0, 900),
+      ],
+      [new Point(640, 560), new Point(700, 620)],
+      [0, 2]
+    ),
   ],
   numberOfRegions: 4,
   leaderRobotStartPosition: new Point(700, 460),

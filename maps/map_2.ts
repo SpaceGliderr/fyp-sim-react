@@ -1,6 +1,7 @@
 import { Goal, GoalShape } from "../game/goal";
 import { MapTemplate } from "../game/map";
 import { PolygonObstacle } from "../game/obstacles";
+import { Region } from "../game/region";
 import { Point } from "../utils/coordinates";
 
 // ========================= DESCRIPTION OF THE MAP =========================
@@ -145,18 +146,28 @@ export const MAP_2: MapTemplate = {
     ),
   ],
   regions: [
-    [
-      new Point(0, 0),
-      new Point(480, 0),
-      new Point(480, 640),
-      new Point(0, 640),
-    ],
-    [
-      new Point(480, 0),
-      new Point(840, 0),
-      new Point(840, 640),
-      new Point(480, 640),
-    ],
+    new Region(
+      0,
+      [
+        new Point(0, 0),
+        new Point(480, 0),
+        new Point(480, 640),
+        new Point(0, 640),
+      ],
+      [new Point(480, 470)],
+      [1]
+    ),
+    new Region(
+      1,
+      [
+        new Point(480, 0),
+        new Point(840, 0),
+        new Point(840, 640),
+        new Point(480, 640),
+      ],
+      [new Point(480, 470)],
+      [1]
+    ),
   ],
   numberOfRegions: 2,
   leaderRobotStartPosition: new Point(500, 260),
