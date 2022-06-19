@@ -2,6 +2,7 @@ import json
 from typing import List
 
 import numpy as np
+from models.region import Region
 from src.api_models import _SensorReading
 from models.point import Point
 import cv2
@@ -14,11 +15,11 @@ class SensorReadingsPerRegion:
 
 
 class Mapping:
-    def __init__(self, width: int, height: int, number_of_regions: int, regions: List[List[Point]], sensor_readings: List[SensorReadingsPerRegion]):
+    def __init__(self, width: int, height: int, number_of_regions: int, region_points: List[List[Point]], sensor_readings: List[SensorReadingsPerRegion]):
         self.map_file_path = "./algorithm/controllers/mapping/map.json"
         self.width = width
         self.height = height
-        self.regions = regions
+        self.region_points = region_points
         self.sensor_readings = sensor_readings
         self.number_of_regions = number_of_regions
         self.save_dir = "./algorithm/controllers/mapping/maps/"
@@ -38,7 +39,7 @@ class Mapping:
         """Converts regions to tuples"""
         regions = []
 
-        for region in self.regions:
+        for region in self.region_points:
             points = []
             for point in region:
                 if (toRound):
@@ -64,7 +65,7 @@ class Mapping:
     
     def get_region_limits(self, region_number: int):
         # x_min, y_min, x_max, y_max
-        return self.regions[region_number][0].x, self.regions[region_number][0].y, self.regions[region_number][2].x, self.regions[region_number][2].y
+        return self.region_points[region_number][0].x, self.region_points[region_number][0].y, self.region_points[region_number][2].x, self.region_points[region_number][2].y
 
 
     def clear_map_json(self):
@@ -107,7 +108,7 @@ class Mapping:
         """Generates a map from the data"""
         final_map = np.full((self.height + 1, self.width + 1), 255, dtype=np.uint8)
 
-        for idx, _ in enumerate(self.regions):
+        for idx, _ in enumerate(self.region_points):
             region_map = self.generate_region_map(idx)
             final_map = cv2.bitwise_and(final_map, region_map)
 
