@@ -5,6 +5,7 @@ from typing import List
 
 import cv2
 from algorithm.controllers.mapping.mapping import SensorReadingsPerRegion
+from models.region import Region
 from src.api_models import _Mapping
 from src.api_models import _Robot
 from models.point import Point
@@ -63,16 +64,22 @@ def transform_mapping_api_model(mapping: _Mapping):
         
         sensor_readings_per_region.append(SensorReadingsPerRegion(sensor_readings.region_number, readings))
 
-    regions = []
+    regions: List[Region] = []
+    region_points: List[Point] = []
     for region in mapping.regions:
         points = []
-
-        for point in region:
+        for point in region.points:
             points.append(Point(point.x, point.y))
 
-        regions.append(points)
+        region_points.append(points)
 
-    return mapping.width, mapping.height, mapping.number_of_regions, regions, sensor_readings_per_region
+        entry_points = []
+        for entry_point in region.entry_points:
+            entry_points.append(Point(entry_point.x, entry_point.y))
+
+        regions.append(Region(region.id, points, entry_points, region.connected_region_ids))
+
+    return mapping.width, mapping.height, mapping.number_of_regions, region_points, sensor_readings_per_region
 
 
 def save_image(name: str, dir: str, content):
