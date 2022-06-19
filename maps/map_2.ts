@@ -147,15 +147,15 @@ export const MAP_2: MapTemplate = {
   regions: [
     [
       new Point(0, 0),
-      new Point(420, 0),
-      new Point(420, 640),
+      new Point(480, 0),
+      new Point(480, 640),
       new Point(0, 640),
     ],
     [
-      new Point(420, 0),
+      new Point(480, 0),
       new Point(840, 0),
       new Point(840, 640),
-      new Point(420, 640),
+      new Point(480, 640),
     ],
   ],
   numberOfRegions: 2,
