@@ -16,6 +16,11 @@ class Point:
         """Returns the difference of two points."""
         return Point(self.x - other.x, self.y - other.y)
 
+    
+    def equal(self, other):
+        """Returns True if the points are equal."""
+        return self.x == other.x and self.y == other.y
+
 
     def scale(self, scale: float):
         """
