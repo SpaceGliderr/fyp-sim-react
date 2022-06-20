@@ -42,7 +42,7 @@ export enum RobotStatus {
 export enum RobotControllers {
   GO_TO_GOAL = "GO_TO_GOAL",
   AVOID_OBSTACLES = "AVOID_OBSTACLES",
-  FOLLOW_WALL = "FOLLOW_WALL",
+  REVERSE = "REVERSE",
 }
 
 export type RobotPIDMetadata = {
@@ -84,6 +84,7 @@ export class Robot extends CircleObstacle {
   private irSensors: IRSensor[];
   private usSensors: USSensor[];
   private status: RobotStatus = RobotStatus.MAPPING; // TODO: Change this back to IDLE once debugging is done with mapping
+  private previousStatus: RobotStatus = RobotStatus.MAPPING;
   private currentGoal: Goal | undefined = undefined; // A robot's current goal can be undefined
   private activityHistory: ActivityHistory[] = [];
   private id: number;
@@ -146,11 +147,24 @@ export class Robot extends CircleObstacle {
   };
 
   public setStatus = (status: RobotStatus) => {
+    if (
+      status === RobotStatus.COLLISION &&
+      this.status !== RobotStatus.COLLISION
+    )
+      this.previousStatus = this.status;
     this.status = status;
   };
 
   public getStatus = () => {
     return this.status;
+  };
+
+  public revertPreviousStatus = () => {
+    this.status = this.previousStatus;
+  };
+
+  public getPreviousStatus = () => {
+    return this.previousStatus;
   };
 
   public setPose = (pose: Pose) => {
@@ -509,7 +523,11 @@ export class Robot extends CircleObstacle {
         this.setCurrentController(RobotControllers.GO_TO_GOAL);
         break;
 
-      case 2: // Follow wall behavior
+      case 2: // Reverse behavior
+        this.drive(steering_input[0], steering_input[1]);
+        this.setPIDMetadata(pid_metadata);
+        this.setCurrentController(RobotControllers.REVERSE);
+        this.revertPreviousStatus();
         break;
 
       case 3: // Avoid obstacle behavior
@@ -579,6 +597,10 @@ export class Robot extends CircleObstacle {
 
   public isLeader = () => {
     return this.leader;
+  };
+
+  public getCurrentController = () => {
+    return this.currentController;
   };
 }
 
