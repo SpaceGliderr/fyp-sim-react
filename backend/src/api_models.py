@@ -49,7 +49,7 @@ class _Algorithm(BaseModel):
 
 class _PayloadTypes(Enum):
     gtg = 1 # Go To Goal payload type.
-    fw = 2 # Follow Wall payload type.
+    rv = 2 # Reverse payload type.
     ao = 3 # Avoid Obstacle payload type.
 
 
