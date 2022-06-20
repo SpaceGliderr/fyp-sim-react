@@ -2,6 +2,8 @@ from math import cos, sin, sqrt
 from typing import List
 import cv2
 import numpy as np
+from algorithm.controllers.path_planning.bfs.bfs import BFS
+from algorithm.controllers.path_planning.graph import Graph
 from node import AStarNode
 # import src.settings as settings
 # from models.point import Point
@@ -153,7 +155,7 @@ class PathToGoal:
         self.goal_point = goal_point
 
         # Initialize final map array and associated metadata
-        self.final_map_path = "./algorithm/controllers/mapping/maps/final_map.png"
+        self.final_map_path = "./algorithm/controllers/mapping/maps/final_map_opened.png"
         self.final_map = cv2.imread(self.final_map_path, cv2.IMREAD_GRAYSCALE)
         self.width = self.final_map.shape[1]
         self.height = self.final_map.shape[0]
@@ -180,20 +182,39 @@ class PathToGoal:
         self.regions = [
             Region(0, [
                 Point(0, 0),
-                Point(480, 0),
-                Point(480, 640),
-                Point(0, 640)
-            ], [Point(480, 470)], [1]),
+                Point(1120, 0),
+                Point(1120, 300),
+                Point(0, 300),
+            ], [Point(470, 300), Point(1040, 300)], [1, 2]),
             Region(1, [
-                Point(480, 0),
-                Point(840, 0),
-                Point(840, 640),
-                Point(480, 640)
-            ], [Point(480, 470)], [0])
+                Point(0, 300),
+                Point(590, 300),
+                Point(590, 760),
+                Point(0, 760),
+            ], [Point(470, 300)], [0]),
+            Region(2, [
+                Point(590, 300),
+                Point(1120, 300),
+                Point(1120, 760),
+                Point(590, 760),
+            ], [Point(1040, 300)], [0])
         ]
+
+        # Graph
+        self.graph = Graph(len(self.regions))
+        self.init_graph()
 
         # Initialize miscellaneous variables
         self.save_dir = "./algorithm/controllers/path_planning/"
+
+    
+    def init_graph(self):
+        """
+        Initialize the adjacency matrix graph
+        """
+        for region in self.regions:
+            for region_id in region.connected_region_ids:
+                self.graph.add_edge(region.id, region_id)
 
 
     def get_region_from_point(self, point: Point):
@@ -366,6 +387,28 @@ class PathToGoal:
         cv2.imwrite(f'{self.save_dir}{"path_map.png"}', path_map)
 
     
+    def get_navigation_path(self, start_region: Region, goal_region: Region):
+        """
+        Returns the navigation path from start to goal
+        """
+        path = BFS(self.graph).search(start_region.id, goal_region.id)
+
+        if len(path) == 0:
+            return [self.initial_pose.point, self.goal_point]
+
+        navigation_paths = []
+        for idx, p in enumerate(path):
+            if p == start_region.id:
+                navigation_paths.append(self.initial_pose.point)
+            elif p == goal_region.id:
+                navigation_paths.append(self.goal_point)
+            else:
+                navigation_paths.append(self.regions[path[idx - 1]].get_entry_point(p))
+                navigation_paths.append(self.regions[path[idx + 1]].get_entry_point(p))
+        
+        return navigation_paths
+
+    
     def execute(self):
         """
         Executes the regional A* algorithm
@@ -373,19 +416,8 @@ class PathToGoal:
         initial_pose_region = self.get_region_from_point(self.initial_pose.point),
         initial_pose_region = initial_pose_region[0]
         goal_point_region = self.get_region_from_point(self.goal_point)
-
-        connected_regions = []
-        navigation_points = []
-
-        if initial_pose_region.id == goal_point_region.id:
-            navigation_points = [self.initial_pose.point, self.goal_point]
-        elif initial_pose_region.is_connected_to_region(goal_point_region):
-            connecting_point = initial_pose_region.get_entry_point(goal_point_region.id)
-            navigation_points = [self.initial_pose.point, connecting_point, self.goal_point]
-        else:
-            # TODO: Handle different regions that are not connected
-            pass
         
+        navigation_points = self.get_navigation_path(initial_pose_region, goal_point_region)
         navigation_paths = []
 
         for idx, point in enumerate(navigation_points):
@@ -409,5 +441,6 @@ class PathToGoal:
 # TODO: Remove this once the path planning is fully implemented
 if __name__ == "__main__":
     # Test execution of A star algorithm on the final map
-    path_to_goal = PathToGoal(Pose(Point(170, 50), 0), Point(540, 40))
+    path_to_goal = PathToGoal(Pose(Point(460, 460), 0), Point(1040, 420))
     path_to_goal.execute()
+    # print(path_to_goal.graph.matrix)
