@@ -112,7 +112,15 @@ class Mapping:
             region_map = self.generate_region_map(idx)
             final_map = cv2.bitwise_and(final_map, region_map)
 
+        final_map_opened = self.apply_opening(final_map, 3, 3)
+
         utils.save_image("final_map.png", self.save_dir, final_map)
+        utils.save_image("final_map_opened.png", self.save_dir, final_map_opened)
+
+    
+    def apply_opening(self, image, kernel_size: int, iterations: int):
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
+        return cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel, iterations=iterations)
     
     
     def save_data_to_file(self, replacement_data):
