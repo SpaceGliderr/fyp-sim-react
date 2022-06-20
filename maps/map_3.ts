@@ -42,28 +42,28 @@ export const MAP_3: MapTemplate = {
     ),
     new PolygonObstacle(
       [
-        new Point(140, 80),
-        new Point(240, 80),
-        new Point(240, 140),
-        new Point(140, 140),
+        new Point(140, 100),
+        new Point(240, 100),
+        new Point(240, 160),
+        new Point(140, 160),
       ],
       STATIC_OBSTACLE_COLOR
     ),
     new PolygonObstacle(
       [
-        new Point(40, 220),
-        new Point(80, 220),
-        new Point(80, 260),
-        new Point(40, 260),
+        new Point(60, 220),
+        new Point(100, 220),
+        new Point(100, 260),
+        new Point(60, 260),
       ],
       STATIC_OBSTACLE_COLOR
     ),
     new PolygonObstacle(
       [
-        new Point(120, 240),
-        new Point(260, 240),
-        new Point(260, 300),
-        new Point(120, 300),
+        new Point(140, 240),
+        new Point(280, 240),
+        new Point(280, 300),
+        new Point(140, 300),
       ],
       STATIC_OBSTACLE_COLOR
     ),
@@ -91,10 +91,10 @@ export const MAP_3: MapTemplate = {
     ),
     new PolygonObstacle(
       [
-        new Point(300, 220),
         new Point(340, 220),
+        new Point(380, 220),
+        new Point(380, 260),
         new Point(340, 260),
-        new Point(300, 260),
       ],
       STATIC_OBSTACLE_COLOR
     ),
@@ -280,7 +280,7 @@ export const MAP_3: MapTemplate = {
         new Goal([new Point(480, 160)], GoalShape.CIRCLE, 0, 7),
         new Goal([new Point(360, 60)], GoalShape.CIRCLE, 0, 7),
         new Goal([new Point(300, 180)], GoalShape.CIRCLE, 0, 7),
-        new Goal([new Point(280, 260)], GoalShape.CIRCLE, 0, 7),
+        new Goal([new Point(300, 260)], GoalShape.CIRCLE, 0, 7),
         new Goal([new Point(100, 200)], GoalShape.CIRCLE, 0, 7),
         new Goal([new Point(60, 60)], GoalShape.CIRCLE, 0, 7),
         new Goal([new Point(20, 280)], GoalShape.CIRCLE, 0, 7),

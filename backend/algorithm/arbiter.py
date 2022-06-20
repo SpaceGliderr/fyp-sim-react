@@ -4,7 +4,7 @@ import numpy as np
 from algorithm.controllers.navigation.go_to_goal import GoToGoal
 from algorithm.controllers.mapping.mapping import Mapping
 from algorithm.controllers.navigation.avoid_obstacles import AvoidObstacles
-from algorithm.controllers.navigation.follow_wall import FollowWall
+from algorithm.controllers.navigation.reverse import Reverse
 from models.point import Point
 from src.api_models import _TopologicalEnvironment
 from src.api_models import _PayloadTypes
@@ -18,19 +18,19 @@ import src.settings as settings
 class ControllerType(Enum):
     GO_TO_GOAL = 1
     AVOID_OBSTACLES = 2
-    FOLLOW_WALL = 3
+    REVERSE = 3
 
 
 controller_type_dictionary = {
     "GO_TO_GOAL": ControllerType.GO_TO_GOAL,
     "AVOID_OBSTACLES": ControllerType.AVOID_OBSTACLES,
-    "FOLLOW_WALL": ControllerType.FOLLOW_WALL
+    "REVERSE": ControllerType.REVERSE
 }
 
 payload_type_dictionary = {
     "GO_TO_GOAL": _PayloadTypes.gtg,
     "AVOID_OBSTACLES": _PayloadTypes.ao,
-    "FOLLOW_WALL": _PayloadTypes.fw,
+    "REVERSE": _PayloadTypes.rv,
 }
 
 
@@ -44,7 +44,7 @@ class Arbiter:
         # Declare the controllers
         self.go_to_goal = GoToGoal(self.robot.pose, Point(1.0, 0.0), self.robot.pid_metadata)
         self.avoid_obstacle = AvoidObstacles(self.robot.pose, self.robot.pid_metadata, self.robot.ir_sensors)
-        self.follow_wall = FollowWall(self.robot.pose, self.robot.pid_metadata, self.robot.sensor_readings)
+        self.reverse = Reverse(self.robot.pose, self.robot.pid_metadata)
 
         # Current controller
         self.controller = self.go_to_goal
@@ -56,7 +56,7 @@ class Arbiter:
         self.controller_instances = {
             ControllerType.GO_TO_GOAL: self.go_to_goal,
             ControllerType.AVOID_OBSTACLES: self.avoid_obstacle,
-            ControllerType.FOLLOW_WALL: self.follow_wall
+            ControllerType.REVERSE: self.reverse
         }
 
         # Arbiter payload
@@ -103,7 +103,9 @@ class Arbiter:
         """
         Determines the state of the robot, whether it is in danger or not. And adjusts the controllers accordingly.
         """
-        if self.robot.status == "COLLISION" or self.close_to_obstacle():
+        if self.robot.status == "COLLISION":
+            self.update_controller(ControllerType.REVERSE)
+        elif self.close_to_obstacle():
             self.update_controller(ControllerType.AVOID_OBSTACLES)
         elif self.robot.current_goal is not None or len(self.robot.mapping_goals) > 0:
             self.update_controller(ControllerType.GO_TO_GOAL)
