@@ -126,7 +126,7 @@ class PathToGoal:
             end_point = navigation_points[idx + 1]
 
             # Trigger the A Star algorithm
-            path = self.a_star.search(point, end_point)
+            path = self.a_star.search(point.round(), end_point)
 
             # Add the path to the navigation paths
             navigation_paths.append(path)

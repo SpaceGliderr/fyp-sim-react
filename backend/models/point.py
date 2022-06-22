@@ -30,6 +30,13 @@ class Point:
         return Point(x * scale, y * scale)
 
 
+    def round(self):
+        """
+        Round the x and y values of the point
+        """
+        return Point(round(self.x), round(self.y))
+
+
     def unpack(self):
         """Returns the x, y of the point."""
         return self.x, self.y
