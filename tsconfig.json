@@ -15,11 +15,6 @@
     "jsx": "preserve",
     "incremental": true
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    "public/workers/spawner.js"
-  ],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "public/workers/*.js"],
   "exclude": ["node_modules"]
 }
