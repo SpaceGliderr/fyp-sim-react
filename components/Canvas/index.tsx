@@ -18,6 +18,7 @@ import {
   executeSingleRobot,
 } from "../../public/api/algorithm";
 import { RobotStatus } from "../../game/robot";
+import { RobotWorker, RobotWorkerStatus } from "../../typings/robot-worker";
 
 const Canvas = (props: CanvasProp) => {
   const { map: m } = props;
@@ -36,6 +37,7 @@ const Canvas = (props: CanvasProp) => {
   ); // First simulator action state is MAPPING procedure
   const [currentRobotId, setCurrentRobotId] = useState<number>(0); // Current robot id that is being controlled
   const numberOfRobots = simulator.getRobots().length; // Number of robots in the simulator
+  const [robotWorkers, setRobotWorkers] = useState<RobotWorker[]>([]); // Array of workers that are running the robots
 
   // ========================= SIMULATOR ACTIONS =========================
   const updateAction = useCallback(() => {
@@ -231,6 +233,71 @@ const Canvas = (props: CanvasProp) => {
       };
     }
   }, [spawnerWorker, simulator]);
+
+  // ========================= ROBOT WORKERS =========================
+  useEffect(() => {
+    const robots = simulator.getRobots();
+
+    if (simulatorAction === SimulatorAction.NAVIGATION) {
+      const ticker = setInterval(() => {
+        if (robotWorkers.length === 0) {
+          const robotWorkersArray: RobotWorker[] = [];
+          for (let i = 0; i < numberOfRobots; i++) {
+            const worker = new Worker("./workers/robot.js", { type: "module" });
+            robotWorkersArray.push({
+              status: RobotWorkerStatus.IDLE,
+              worker,
+            });
+          }
+          setRobotWorkers(robotWorkersArray);
+        } else {
+          robotWorkers.forEach((robotWorker, idx) => {
+            const { status, worker } = robotWorker;
+            if (
+              status === RobotWorkerStatus.IDLE &&
+              robots[idx].getCurrentGoal()
+            ) {
+              console.log(
+                "Robot Worker Starting",
+                robots[idx].generatePayload()
+              );
+              worker.postMessage(JSON.stringify(robots[idx].generatePayload()));
+              setRobotWorkers((prev) => {
+                prev[idx].status = RobotWorkerStatus.PROCESSING;
+                return prev;
+              });
+            }
+          });
+        }
+      }, 2000);
+
+      return () => clearInterval(ticker);
+    }
+  }, [
+    simulatorAction,
+    numberOfRobots,
+    robotWorkers,
+    setRobotWorkers,
+    simulator,
+  ]);
+
+  useEffect(() => {
+    if (
+      simulatorAction === SimulatorAction.NAVIGATION &&
+      robotWorkers.length === numberOfRobots
+    ) {
+      robotWorkers.forEach(({ worker }, idx) => {
+        worker.onmessage = (event: any) => {
+          const { data } = event;
+          console.log(data);
+          setRobotWorkers((prev) => {
+            prev[idx].status = RobotWorkerStatus.IDLE;
+            return prev;
+          });
+        };
+      });
+    }
+  }, [simulatorAction, robotWorkers, numberOfRobots]);
 
   return (
     <div>
