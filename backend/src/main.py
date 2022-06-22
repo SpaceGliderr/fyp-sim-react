@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from algorithm.algorithm import BaseAlgorithm
 from algorithm.arbiter import Arbiter
 from algorithm.controllers.mapping.mapping import Mapping
+from algorithm.controllers.path_planning.path_to_goal import PathToGoal
 from src.api_models import _Mapping
 from src.utils import transform_mapping_api_model
 from src.api_models import _Robot
@@ -53,3 +54,10 @@ def generate_map(raw_mapping: _Mapping):
     mapping.clear_map_json()
     mapping.store_raw_data()
     mapping.generate_map()
+
+
+@app.post("/plan_path")
+def plan_path(robot: _Robot):
+    robot = utils.transform_robot_api_model(robot)
+    path_to_goal = PathToGoal(robot[1], robot[3])
+    path_to_goal.execute()
