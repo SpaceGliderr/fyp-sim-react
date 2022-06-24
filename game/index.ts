@@ -386,4 +386,46 @@ export class Simulator {
   public getHeight = () => {
     return this.height;
   };
+
+  public navigation = () => {
+    this.robots.forEach((robot) => {
+      if (
+        robot.getCurrentGoal() &&
+        (robot.getStatus() === RobotStatus.MAPPING_COMPLETE ||
+          robot.getStatus() === RobotStatus.GOAL_REACHED)
+      ) {
+        if (
+          includes(robot.getRobotsWithinSignalRange(), this.leaderRobot.getId())
+        ) {
+          this.leaderRobot.addRobotIdsToPlanPathFor(robot.getId());
+          robot.setStatus(RobotStatus.PLAN_PATH);
+        } else {
+          robot.setStatus(RobotStatus.FIND_LEADER);
+        }
+      } else if (
+        robot.getPathPoints().length > 0 &&
+        robot.getStatus() === RobotStatus.NAVIGATION
+      ) {
+        const currentPoint = robot.getPathPoints()[0];
+        const pointDiff = robot.getPose().getPoint().subtract(currentPoint);
+
+        // Check if pointDiff has a +- 0.5 error
+        if (
+          !(
+            pointDiff.getX() > -0.5 &&
+            pointDiff.getX() < 0.5 &&
+            pointDiff.getY() > -0.5 &&
+            pointDiff.getY() < 0.5
+          )
+        ) {
+          const newPathPoints = robot.getPathPoints().slice(1);
+          robot.setPathPoints(newPathPoints);
+
+          if (newPathPoints.length == 0) {
+            robot.setStatus(RobotStatus.GOAL_REACHED);
+          }
+        }
+      }
+    });
+  };
 }

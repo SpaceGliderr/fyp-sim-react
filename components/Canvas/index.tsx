@@ -18,7 +18,12 @@ import {
   executeSingleRobot,
 } from "../../public/api/algorithm";
 import { RobotStatus } from "../../game/robot";
-import { RobotWorker, RobotWorkerStatus } from "../../typings/robot-worker";
+import {
+  RobotWorker,
+  RobotWorkerArgs,
+  RobotWorkerOperation,
+  RobotWorkerStatus,
+} from "../../typings/robot-worker";
 
 const Canvas = (props: CanvasProp) => {
   const { map: m } = props;
@@ -103,6 +108,8 @@ const Canvas = (props: CanvasProp) => {
       }
 
       simulator.mappingComplete();
+    } else if (simulatorAction === SimulatorAction.NAVIGATION) {
+      simulator.navigation();
     }
   }, [simulator, simulatorAction, currentRobotId, numberOfRobots]);
 
@@ -251,25 +258,61 @@ const Canvas = (props: CanvasProp) => {
           }
           setRobotWorkers(robotWorkersArray);
         } else {
-          robotWorkers.forEach((robotWorker, idx) => {
-            const { status, worker } = robotWorker;
+          const robotIdsToPlanPathFor = simulator
+            .getLeaderRobot()
+            .getRobotIdsToPlanPathFor();
+
+          robots.forEach((robot) => {
+            const id = robot.getId();
+            const { status, worker } = robotWorkers[id];
+            let args: RobotWorkerArgs = {
+              payload: robot.generatePayload(),
+            };
+
+            console.log(robot.getStatus());
+
+            if (
+              simulator.getLeaderRobot().hasRobotIdToPlanPathFor(id) &&
+              robot.getStatus() === RobotStatus.PLAN_PATH &&
+              robot.getCurrentGoal()
+            ) {
+              args.operation = RobotWorkerOperation.PLAN_PATH;
+            } else if (
+              robot.getStatus() === RobotStatus.NAVIGATION &&
+              robot.getPathPoints().length > 0
+            ) {
+              args.operation = RobotWorkerOperation.NAVIGATE;
+            } else if (robot.getStatus() === RobotStatus.FIND_LEADER) {
+              args.operation = RobotWorkerOperation.FIND_LEADER;
+            }
+
+            if (status === RobotWorkerStatus.IDLE) {
+              worker.postMessage(JSON.stringify(args));
+              setRobotWorkers((prev) => {
+                prev[id].status = RobotWorkerStatus.PROCESSING;
+                return prev;
+              });
+            }
+          });
+
+          robotIdsToPlanPathFor.forEach((robotId) => {
+            const { status, worker } = robotWorkers[robotId];
+            const robot = robots[robotId];
+
             if (
               status === RobotWorkerStatus.IDLE &&
-              robots[idx].getCurrentGoal()
+              robot.getCurrentGoal() &&
+              robot.getStatus() === RobotStatus.PLAN_PATH
             ) {
-              console.log(
-                "Robot Worker Starting",
-                robots[idx].generatePayload()
-              );
-              worker.postMessage(JSON.stringify(robots[idx].generatePayload()));
+              worker.postMessage(JSON.stringify(robot.generatePayload()));
               setRobotWorkers((prev) => {
-                prev[idx].status = RobotWorkerStatus.PROCESSING;
+                prev[robotId].status = RobotWorkerStatus.PROCESSING;
                 return prev;
               });
             }
           });
         }
-      }, 2000);
+      }, TICKS_PER_UPDATE);
 
       return () => clearInterval(ticker);
     }
@@ -282,6 +325,8 @@ const Canvas = (props: CanvasProp) => {
   ]);
 
   useEffect(() => {
+    const robots = simulator.getRobots();
+
     if (
       simulatorAction === SimulatorAction.NAVIGATION &&
       robotWorkers.length === numberOfRobots
@@ -289,7 +334,22 @@ const Canvas = (props: CanvasProp) => {
       robotWorkers.forEach(({ worker }, idx) => {
         worker.onmessage = (event: any) => {
           const { data } = event;
-          console.log(data);
+          const { operation, payload } = data;
+
+          const robot = robots[idx];
+
+          if (operation === RobotWorkerOperation.PLAN_PATH.toString()) {
+            console.log("lkJBAKSDJBGLAKSJDBG");
+            robot.setPathPoints(payload, true);
+            robot.setStatus(RobotStatus.NAVIGATION);
+            console.log(robot.getPathPoints());
+          } else if (
+            operation === RobotWorkerOperation.NAVIGATE.toString() ||
+            operation === RobotWorkerOperation.FIND_LEADER.toString()
+          ) {
+            robot.execute(payload);
+          }
+
           setRobotWorkers((prev) => {
             prev[idx].status = RobotWorkerStatus.IDLE;
             return prev;
@@ -297,7 +357,13 @@ const Canvas = (props: CanvasProp) => {
         };
       });
     }
-  }, [simulatorAction, robotWorkers, numberOfRobots]);
+  }, [
+    simulatorAction,
+    robotWorkers,
+    numberOfRobots,
+    setRobotWorkers,
+    simulator,
+  ]);
 
   return (
     <div>
