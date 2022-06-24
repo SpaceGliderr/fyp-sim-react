@@ -56,8 +56,10 @@ def generate_map(raw_mapping: _Mapping):
     mapping.generate_map()
 
 
-@app.post("/plan_path")
+@app.post("/plan_path/")
 def plan_path(robot: _Robot):
     robot = utils.transform_robot_api_model(robot)
+    print("Robot ID >>> ", robot[0])
     path_to_goal = PathToGoal(robot[1], robot[3])
-    path_to_goal.execute()
+    navigation_paths = path_to_goal.execute()
+    return navigation_paths
