@@ -37,6 +37,8 @@ export enum RobotStatus {
   MAPPING_COMPLETE = "MAPPING_COMPLETE", // When the robot has completed mapping
   FIND_LEADER = "FIND_LEADER", // When the robot is finding the leader
   NAVIGATION = "NAVIGATION", // When the robot is navigating
+  GOAL_REACHED = "GOAL_REACHED", // When the robot has reached its goal
+  PLAN_PATH = "PLAN_PATH", // When the robot is planning a path
 }
 
 export enum RobotControllers {
@@ -103,6 +105,7 @@ export class Robot extends CircleObstacle {
   private currentController: RobotControllers = RobotControllers.GO_TO_GOAL;
   private isCurrentlyMapping: boolean = false;
   private leaderPosition: Point;
+  private pathPoints: Point[] = [];
 
   constructor(
     vector: Vector,
@@ -439,6 +442,7 @@ export class Robot extends CircleObstacle {
       front_sensor_distances,
       ir_sensors,
       leader_position: this.leaderPosition,
+      path_points: this.pathPoints,
     };
     if (closestGoalPoint) {
       return {
@@ -602,6 +606,29 @@ export class Robot extends CircleObstacle {
   public getCurrentController = () => {
     return this.currentController;
   };
+
+  public setPathPoints = (
+    pathPoints: Point[] | any[],
+    fromPayload: boolean = false
+  ) => {
+    if (fromPayload) {
+      console.log(this.generatePathPoints(pathPoints));
+      this.pathPoints = this.generatePathPoints(pathPoints);
+    } else {
+      this.pathPoints = pathPoints;
+    }
+  };
+
+  public generatePathPoints = (payload: any[]) => {
+    return payload.flat().map((point) => {
+      console.log(point);
+      return new Point(point.x, point.y);
+    });
+  };
+
+  public getPathPoints = () => {
+    return this.pathPoints;
+  };
 }
 
 export type SensorReadingsPerRegion = {
@@ -613,6 +640,7 @@ export class LeaderRobot extends Robot {
   private numberOfRegions: number;
   private regions: Region[];
   private sensorReadingsPerRegion: SensorReadingsPerRegion[];
+  private robotIdsToPlanPathFor: number[] = [];
 
   constructor(
     robot: RobotConstructorArgs,
@@ -668,5 +696,17 @@ export class LeaderRobot extends Robot {
         }
       ),
     };
+  };
+
+  public addRobotIdsToPlanPathFor = (id: number) => {
+    this.robotIdsToPlanPathFor.push(id);
+  };
+
+  public getRobotIdsToPlanPathFor = () => {
+    return this.robotIdsToPlanPathFor;
+  };
+
+  public hasRobotIdToPlanPathFor = (id: number) => {
+    return this.robotIdsToPlanPathFor.includes(id);
   };
 }
