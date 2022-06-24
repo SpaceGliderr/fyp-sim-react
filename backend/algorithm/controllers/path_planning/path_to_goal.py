@@ -25,24 +25,46 @@ class PathToGoal:
 
         # Initialize regions
         self.regions = [
-            Region(0, [
-                Point(0, 0),
-                Point(1120, 0),
-                Point(1120, 300),
-                Point(0, 300),
-            ], [Point(470, 300), Point(1040, 300)], [1, 2]),
-            Region(1, [
-                Point(0, 300),
-                Point(590, 300),
-                Point(590, 760),
-                Point(0, 760),
-            ], [Point(470, 300)], [0]),
-            Region(2, [
-                Point(590, 300),
-                Point(1120, 300),
-                Point(1120, 760),
-                Point(590, 760),
-            ], [Point(1040, 300)], [0])
+            Region(
+                0,
+                [
+                    Point(0, 0),
+                    Point(480, 0),
+                    Point(480, 640),
+                    Point(0, 640),
+                ],
+                [Point(480, 470)],
+                [1]
+            ),
+            Region(
+                1,
+                [
+                    Point(480, 0),
+                    Point(840, 0),
+                    Point(840, 640),
+                    Point(480, 640),
+                ],
+                [Point(480, 470)],
+                [1]
+            ),
+            # Region(0, [
+            #     Point(0, 0),
+            #     Point(1120, 0),
+            #     Point(1120, 300),
+            #     Point(0, 300),
+            # ], [Point(470, 300), Point(1040, 300)], [1, 2]),
+            # Region(1, [
+            #     Point(0, 300),
+            #     Point(590, 300),
+            #     Point(590, 760),
+            #     Point(0, 760),
+            # ], [Point(470, 300)], [0]),
+            # Region(2, [
+            #     Point(590, 300),
+            #     Point(1120, 300),
+            #     Point(1120, 760),
+            #     Point(590, 760),
+            # ], [Point(1040, 300)], [0])
         ]
 
         # Graph
@@ -133,3 +155,5 @@ class PathToGoal:
 
         # Visualize the navigation paths
         self.visualize(list(np.concatenate(navigation_paths).flat))
+
+        return navigation_paths
