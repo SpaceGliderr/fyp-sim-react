@@ -49,8 +49,13 @@ def transform_robot_api_model(robot: _Robot):
             mapping_goals.append(Point(goal.x, goal.y))
 
     leader_position = Point(robot.leader_position.x, robot.leader_position.y)
+
+    path_points: List[Point] = []
+    if (len(robot.path_points) > 0):
+        for point in robot.path_points:
+            path_points.append(Point(point.x, point.y))
     
-    return robot.id, pose, robot.sensor_readings, current_goal, robot.pid_metadata, robot.robots_within_signal_range, mapping_goals, robot.status, transform_sensor_readings(robot.ir_sensors), robot.front_sensor_distances, leader_position
+    return robot.id, pose, robot.sensor_readings, current_goal, robot.pid_metadata, robot.robots_within_signal_range, mapping_goals, robot.status, transform_sensor_readings(robot.ir_sensors), robot.front_sensor_distances, leader_position, path_points
 
 
 def transform_mapping_api_model(mapping: _Mapping):

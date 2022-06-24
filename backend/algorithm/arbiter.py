@@ -38,8 +38,8 @@ payload_type_dictionary = {
 # The arbiter class is a decision making class that decides the next move for the robot.
 class Arbiter:
     def __init__(self, robot: _Robot) -> None:
-        id, pose, sensor_readings, current_goal, pid_metadata, robots_within_signal_range, mapping_goals, status, ir_sensors, front_sensor_distances, leader_position = transform_robot_api_model(robot)
-        self.robot = Robot(id, pose, sensor_readings, mapping_goals, status, ir_sensors, front_sensor_distances, leader_position, current_goal, pid_metadata, robots_within_signal_range)
+        id, pose, sensor_readings, current_goal, pid_metadata, robots_within_signal_range, mapping_goals, status, ir_sensors, front_sensor_distances, leader_position, path_points = transform_robot_api_model(robot)
+        self.robot = Robot(id, pose, sensor_readings, mapping_goals, status, ir_sensors, front_sensor_distances, leader_position, path_points, current_goal, pid_metadata, robots_within_signal_range)
 
         # Declare the controllers
         self.go_to_goal = GoToGoal(self.robot.pose, Point(1.0, 0.0), self.robot.pid_metadata)
@@ -95,8 +95,10 @@ class Arbiter:
                 self.update_goal_of_controllers(self.robot.mapping_goals[0])
         elif self.robot.status == "FIND_LEADER":
             self.update_goal_of_controllers(self.robot.leader_position)
-        elif self.robot.current_goal is not None:
-            self.update_goal_of_controllers(self.robot.current_goal)
+        elif self.robot.status == "NAVIGATION":
+            if len(self.robot.path_points) > 0:
+                self.update_goal_of_controllers(self.robot.path_points[0])
+            # self.update_goal_of_controllers(self.robot.current_goal)
 
 
     def determine_controller(self):
@@ -105,9 +107,9 @@ class Arbiter:
         """
         if self.robot.status == "COLLISION":
             self.update_controller(ControllerType.REVERSE)
-        elif self.close_to_obstacle():
+        elif self.close_to_obstacle() and not self.robot.status == "NAVIGATION":
             self.update_controller(ControllerType.AVOID_OBSTACLES)
-        elif self.robot.current_goal is not None or len(self.robot.mapping_goals) > 0:
+        elif len(self.robot.path_points) > 0 or len(self.robot.mapping_goals) > 0:
             self.update_controller(ControllerType.GO_TO_GOAL)
         elif self.robot.status == "FIND_LEADER":
             self.update_controller(ControllerType.GO_TO_GOAL)
