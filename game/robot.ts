@@ -3,7 +3,7 @@ import { SimulatorAction } from ".";
 import { CanvasHelper } from "../utils/canvas";
 import { Line, Point, Pose, Vector } from "../utils/coordinates";
 import { MathHelper } from "../utils/math";
-import { Goal } from "./goal";
+import { Goal, GoalStatus } from "./goal";
 import { CircleObstacle, PolygonObstacle } from "./obstacles";
 import { Region } from "./region";
 import { IRSensor, USSensor } from "./sensor";
@@ -39,6 +39,7 @@ export enum RobotStatus {
   NAVIGATION = "NAVIGATION", // When the robot is navigating
   GOAL_REACHED = "GOAL_REACHED", // When the robot has reached its goal
   PLAN_PATH = "PLAN_PATH", // When the robot is planning a path
+  GOAL_NOT_REACHED = "GOAL_NOT_REACHED", // When the robot has not found its goal
 }
 
 export enum RobotControllers {
@@ -85,7 +86,7 @@ export class Robot extends CircleObstacle {
   private pose: Pose;
   private irSensors: IRSensor[];
   private usSensors: USSensor[];
-  private status: RobotStatus = RobotStatus.MAPPING; // TODO: Change this back to IDLE once debugging is done with mapping
+  private status: RobotStatus = RobotStatus.MAPPING_COMPLETE; // TODO: Change this back to IDLE once debugging is done with mapping
   private previousStatus: RobotStatus = RobotStatus.MAPPING;
   private currentGoal: Goal | undefined = undefined; // A robot's current goal can be undefined
   private activityHistory: ActivityHistory[] = [];
@@ -324,7 +325,7 @@ export class Robot extends CircleObstacle {
 
   private goalReached = () => {
     if (this.currentGoal) {
-      this.currentGoal.setStatusToReached();
+      this.currentGoal.setStatus(GoalStatus.REACHED);
 
       this.activityHistory.push({
         goal: this.currentGoal,
@@ -332,23 +333,32 @@ export class Robot extends CircleObstacle {
       });
 
       this.currentGoal = undefined;
+
+      this.setStatus(RobotStatus.GOAL_REACHED);
     }
   };
 
   private goalNotReached = () => {
     if (this.currentGoal) {
+      this.currentGoal.setStatus(GoalStatus.NOT_REACHED);
+
       this.activityHistory.push({ goal: this.currentGoal });
 
       this.currentGoal = undefined;
+
+      // Reset robot status here
+      this.setStatus(RobotStatus.GOAL_NOT_REACHED);
     }
   };
 
   public checkGoal = () => {
     if (this.currentGoal && this.currentGoal.checkForCollisionWithRobot(this)) {
       this.goalReached();
+      this.resetPathPoints();
       return this.id;
     } else if (this.currentGoal && this.currentGoal.isExpired()) {
       this.goalNotReached();
+      this.resetPathPoints();
       return this.id;
     }
     return null;
@@ -359,7 +369,7 @@ export class Robot extends CircleObstacle {
     const removedMappingGoal = newMappingGoals.shift();
     this.mappingGoals = newMappingGoals;
 
-    removedMappingGoal?.setStatusToReached();
+    removedMappingGoal?.setStatus(GoalStatus.REACHED);
 
     if (removedMappingGoal) {
       this.activityHistory.push({
@@ -628,6 +638,35 @@ export class Robot extends CircleObstacle {
 
   public getPathPoints = () => {
     return this.pathPoints;
+  };
+
+  public resetPathPoints = () => {
+    this.pathPoints = [];
+  };
+
+  public generateActivityHistoryPayload = () => {
+    return this.activityHistory.map((activity) => {
+      const goal: any = {
+        point: activity.goal.getPoints()[0],
+        robot_id: activity.goal.getRobotId(),
+      };
+
+      const expiryDate = activity.goal.getExpiryDate();
+
+      if (expiryDate) {
+        goal.expiry_date = expiryDate.toISOString();
+      }
+
+      const payload: any = {
+        goal,
+      };
+
+      if (activity.timeTaken && activity.timeTaken !== null) {
+        payload.time_taken = activity.timeTaken;
+      }
+
+      return payload;
+    });
   };
 }
 
