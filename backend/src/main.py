@@ -64,7 +64,6 @@ def generate_map(raw_mapping: _Mapping):
 def plan_path(robot: _Robot, mapping: _Mapping):
     robot = utils.transform_robot_api_model(robot)
     mapping = utils.transform_mapping_api_model(mapping)
-    print("Robot ID >>> ", robot[0])
     path_to_goal = PathToGoal(robot[1], robot[3], mapping[5])
     navigation_paths = path_to_goal.execute()
     return navigation_paths
