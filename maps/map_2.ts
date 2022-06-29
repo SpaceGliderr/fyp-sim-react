@@ -65,15 +65,6 @@ export const MAP_2: MapTemplate = {
     ),
     new PolygonObstacle(
       [
-        new Point(40, 380),
-        new Point(100, 380),
-        new Point(100, 440),
-        new Point(40, 440),
-      ],
-      STATIC_OBSTACLE_COLOR
-    ),
-    new PolygonObstacle(
-      [
         new Point(140, 560),
         new Point(420, 560),
         new Point(420, 640),
