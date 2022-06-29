@@ -12,7 +12,7 @@ from models.pose import Pose
 import sys
 
 class PathToGoal:
-    def __init__(self, initial_pose: Pose, goal_point: Point):
+    def __init__(self, initial_pose: Pose, goal_point: Point, regions: List[Region]):
         np.set_printoptions(threshold=sys.maxsize)
 
         # Initialize constructor variables
@@ -24,48 +24,7 @@ class PathToGoal:
         self.final_map = cv2.imread(self.final_map_path, cv2.IMREAD_GRAYSCALE)
 
         # Initialize regions
-        self.regions = [
-            Region(
-                0,
-                [
-                    Point(0, 0),
-                    Point(480, 0),
-                    Point(480, 640),
-                    Point(0, 640),
-                ],
-                [Point(480, 470)],
-                [1]
-            ),
-            Region(
-                1,
-                [
-                    Point(480, 0),
-                    Point(840, 0),
-                    Point(840, 640),
-                    Point(480, 640),
-                ],
-                [Point(480, 470)],
-                [1]
-            ),
-            # Region(0, [
-            #     Point(0, 0),
-            #     Point(1120, 0),
-            #     Point(1120, 300),
-            #     Point(0, 300),
-            # ], [Point(470, 300), Point(1040, 300)], [1, 2]),
-            # Region(1, [
-            #     Point(0, 300),
-            #     Point(590, 300),
-            #     Point(590, 760),
-            #     Point(0, 760),
-            # ], [Point(470, 300)], [0]),
-            # Region(2, [
-            #     Point(590, 300),
-            #     Point(1120, 300),
-            #     Point(1120, 760),
-            #     Point(590, 760),
-            # ], [Point(1040, 300)], [0])
-        ]
+        self.regions = regions
 
         # Graph
         self.graph = Graph(len(self.regions))
@@ -112,20 +71,17 @@ class PathToGoal:
         Returns the navigation path from start to goal
         """
         path = self.bfs.search(start_region.id, goal_region.id)
-
+        
         if len(path) == 0:
             return [self.initial_pose.point, self.goal_point]
 
-        navigation_paths = []
+        navigation_paths = [self.initial_pose.point]
         for idx, p in enumerate(path):
-            if p == start_region.id:
-                navigation_paths.append(self.initial_pose.point)
-            elif p == goal_region.id:
-                navigation_paths.append(self.goal_point)
-            else:
-                navigation_paths.append(self.regions[path[idx - 1]].get_entry_point(p))
-                navigation_paths.append(self.regions[path[idx + 1]].get_entry_point(p))
-        
+            if idx == len(path) - 1:
+                break
+            navigation_paths.append(self.regions[path[idx + 1]].get_entry_point(p))
+        navigation_paths.append(self.goal_point)
+
         return navigation_paths
 
     
@@ -133,6 +89,9 @@ class PathToGoal:
         """
         Executes the regional A* algorithm
         """
+        if not self.a_star.is_point_valid(self.goal_point):
+            return []
+        
         initial_pose_region = self.get_region_from_point(self.initial_pose.point),
         initial_pose_region = initial_pose_region[0]
         goal_point_region = self.get_region_from_point(self.goal_point)
