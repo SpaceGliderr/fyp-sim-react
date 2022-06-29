@@ -88,4 +88,6 @@ class _Goal(BaseModel):
 
 class _ActivityHistory(BaseModel):
     goal: _Goal
+    expired: bool
+    max_iterations: bool
     time_taken: float = None

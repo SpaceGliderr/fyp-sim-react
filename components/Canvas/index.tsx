@@ -45,6 +45,7 @@ const Canvas = (props: CanvasProp) => {
   const [currentRobotId, setCurrentRobotId] = useState<number>(0); // Current robot id that is being controlled
   const numberOfRobots = simulator.getRobots().length; // Number of robots in the simulator
   const [robotWorkers, setRobotWorkers] = useState<RobotWorker[]>([]); // Array of workers that are running the robots
+  const [testIteration, setTestIteration] = useState<number>(0); // Current test iteration
 
   // ========================= SIMULATOR ACTIONS =========================
   const updateAction = useCallback(() => {
@@ -207,6 +208,13 @@ const Canvas = (props: CanvasProp) => {
     const ticker = setInterval(() => {
       // Apply sensor readings every 20ms
       simulator.readRobotSensors();
+
+      if (simulatorAction === SimulatorAction.NAVIGATION) {
+        setTestIteration((prev) => {
+          // console.log(prev);
+          return prev + 20;
+        });
+      }
     }, SENSOR_TICKS_PER_UPDATE);
 
     return () => clearInterval(ticker);
@@ -217,9 +225,8 @@ const Canvas = (props: CanvasProp) => {
       return;
     }
 
-    if (simulatorAction === SimulatorAction.NAVIGATION) {
-      console.log("STARTED");
-      const ticker = setInterval(() => {}, TEST_TIME);
+    if (testIteration === TEST_TIME) {
+      console.log("COMPLETED");
 
       const response = executeLogActivityHistory(
         simulator.generateActivityHistories()
@@ -229,11 +236,8 @@ const Canvas = (props: CanvasProp) => {
           simulator.setAction(SimulatorAction.COMPLETE);
         })
         .catch(() => {});
-      console.log("COMPLETED");
-
-      return () => clearInterval(ticker);
     }
-  }, [simulator, simulatorAction]);
+  }, [simulator, simulatorAction, testIteration]);
 
   // ========================= SPAWNER WORKER =========================
   useEffect(() => {
@@ -324,6 +328,8 @@ const Canvas = (props: CanvasProp) => {
               args.operation = RobotWorkerOperation.NAVIGATE;
             } else if (robot.getStatus() === RobotStatus.FIND_LEADER) {
               args.operation = RobotWorkerOperation.FIND_LEADER;
+            } else if (robot.getStatus() === RobotStatus.COLLISION) {
+              args.operation = RobotWorkerOperation.COLLISION;
             }
 
             if (status === RobotWorkerStatus.IDLE) {
@@ -379,11 +385,21 @@ const Canvas = (props: CanvasProp) => {
           const robot = robots[idx];
 
           if (operation === RobotWorkerOperation.PLAN_PATH.toString()) {
-            robot.setPathPoints(payload, true);
-            robot.setStatus(RobotStatus.NAVIGATION);
+            if (payload.flat().length > 0) {
+              if (typeof payload.flat()[0] === "string") {
+                simulator.removeGoal(robot, true);
+              } else {
+                robot.setPathPoints(payload, true);
+                robot.setStatus(RobotStatus.NAVIGATION);
+              }
+            } else {
+              // Remove goal as it is unreachable
+              simulator.removeGoal(robot, false);
+            }
           } else if (
             operation === RobotWorkerOperation.NAVIGATE.toString() ||
-            operation === RobotWorkerOperation.FIND_LEADER.toString()
+            operation === RobotWorkerOperation.FIND_LEADER.toString() ||
+            operation === RobotWorkerOperation.COLLISION.toString()
           ) {
             robot.execute(payload);
           }

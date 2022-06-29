@@ -180,6 +180,15 @@ export class Simulator {
     });
   };
 
+  public removeGoal = (robot: Robot, algoFail: boolean) => {
+    robot.removeGoal(algoFail);
+    this.goals = filter(this.goals, (goal) => {
+      if (goal.getRobotId() !== robot.getId()) {
+        return goal;
+      }
+    }) as Goal[];
+  };
+
   public checkRobotMappingGoals = () => {
     this.robots.forEach((robot) => {
       const robotCheckGoal = robot.checkMappingGoal();
@@ -415,14 +424,14 @@ export class Simulator {
         const pointDiff = robot.getPose().getPoint().subtract(currentPoint);
 
         // Check if pointDiff has a +- 0.5 error
+        console.log(pointDiff.unpack());
         if (
-          !(
-            pointDiff.getX() > -PATH_POINT_ERROR_MARGIN &&
-            pointDiff.getX() < PATH_POINT_ERROR_MARGIN &&
-            pointDiff.getY() > -PATH_POINT_ERROR_MARGIN &&
-            pointDiff.getY() < PATH_POINT_ERROR_MARGIN
-          )
+          pointDiff.getX() > -PATH_POINT_ERROR_MARGIN &&
+          pointDiff.getX() < PATH_POINT_ERROR_MARGIN &&
+          pointDiff.getY() > -PATH_POINT_ERROR_MARGIN &&
+          pointDiff.getY() < PATH_POINT_ERROR_MARGIN
         ) {
+          console.log("REMOVED");
           const newPathPoints = robot.getPathPoints().slice(1);
           robot.setPathPoints(newPathPoints);
 

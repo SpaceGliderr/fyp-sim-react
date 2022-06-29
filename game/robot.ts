@@ -67,6 +67,8 @@ export type AlgorithmPayload = {
 export type ActivityHistory = {
   timeTaken?: number | null; // in milliseconds, null means it was a permanent goal
   goal: Goal;
+  expired: boolean;
+  maxIterations: boolean;
 };
 
 export type RobotConstructorArgs = {
@@ -330,6 +332,8 @@ export class Robot extends CircleObstacle {
       this.activityHistory.push({
         goal: this.currentGoal,
         timeTaken: this.currentGoal.getTimeTaken(),
+        expired: false,
+        maxIterations: false,
       });
 
       this.currentGoal = undefined;
@@ -338,11 +342,15 @@ export class Robot extends CircleObstacle {
     }
   };
 
-  private goalNotReached = () => {
+  private goalNotReached = (expired: boolean, algoFail: boolean) => {
     if (this.currentGoal) {
       this.currentGoal.setStatus(GoalStatus.NOT_REACHED);
 
-      this.activityHistory.push({ goal: this.currentGoal });
+      this.activityHistory.push({
+        goal: this.currentGoal,
+        expired,
+        maxIterations: algoFail,
+      });
 
       this.currentGoal = undefined;
 
@@ -357,11 +365,16 @@ export class Robot extends CircleObstacle {
       this.resetPathPoints();
       return this.id;
     } else if (this.currentGoal && this.currentGoal.isExpired()) {
-      this.goalNotReached();
+      this.goalNotReached(true, false);
       this.resetPathPoints();
       return this.id;
     }
     return null;
+  };
+
+  public removeGoal = (algoFail: boolean) => {
+    this.goalNotReached(false, algoFail);
+    this.resetPathPoints();
   };
 
   public mappingGoalReached = () => {
@@ -375,6 +388,8 @@ export class Robot extends CircleObstacle {
       this.activityHistory.push({
         goal: removedMappingGoal,
         timeTaken: removedMappingGoal.getTimeTaken(),
+        expired: false,
+        maxIterations: false,
       });
     }
 
@@ -622,7 +637,7 @@ export class Robot extends CircleObstacle {
     fromPayload: boolean = false
   ) => {
     if (fromPayload) {
-      console.log(this.generatePathPoints(pathPoints));
+      // console.log(this.generatePathPoints(pathPoints));
       this.pathPoints = this.generatePathPoints(pathPoints);
     } else {
       this.pathPoints = pathPoints;
@@ -631,7 +646,7 @@ export class Robot extends CircleObstacle {
 
   public generatePathPoints = (payload: any[]) => {
     return payload.flat().map((point) => {
-      console.log(point);
+      // console.log(point);
       return new Point(point.x, point.y);
     });
   };
@@ -659,6 +674,8 @@ export class Robot extends CircleObstacle {
 
       const payload: any = {
         goal,
+        expired: activity.expired,
+        max_iterations: activity.maxIterations,
       };
 
       if (activity.timeTaken && activity.timeTaken !== null) {
