@@ -32,12 +32,8 @@ class Reverse:
         # Calculate translational velocity
         v = settings.MAX_TRANSLATIONAL_VELOCITY / (abs(w) + 1) ** 0.5
 
-        # Find the limits of the velocities
-        v = max(min(v, settings.MAX_TRANSLATIONAL_VELOCITY), -settings.MAX_TRANSLATIONAL_VELOCITY)
-        w = max(min(w, settings.MAX_ANGULAR_VELOCITY), -settings.MAX_ANGULAR_VELOCITY)
-
         # Return the steering inputs.
-        steering_input = utils.uni_to_diff(-v, w)
+        steering_input = utils.uni_to_diff((-v * 3), w)
         return steering_input, self.pid_metadata
 
 

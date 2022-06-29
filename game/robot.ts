@@ -3,7 +3,7 @@ import { SimulatorAction } from ".";
 import { CanvasHelper } from "../utils/canvas";
 import { Line, Point, Pose, Vector } from "../utils/coordinates";
 import { MathHelper } from "../utils/math";
-import { Goal } from "./goal";
+import { Goal, GoalStatus } from "./goal";
 import { CircleObstacle, PolygonObstacle } from "./obstacles";
 import { Region } from "./region";
 import { IRSensor, USSensor } from "./sensor";
@@ -37,6 +37,9 @@ export enum RobotStatus {
   MAPPING_COMPLETE = "MAPPING_COMPLETE", // When the robot has completed mapping
   FIND_LEADER = "FIND_LEADER", // When the robot is finding the leader
   NAVIGATION = "NAVIGATION", // When the robot is navigating
+  GOAL_REACHED = "GOAL_REACHED", // When the robot has reached its goal
+  PLAN_PATH = "PLAN_PATH", // When the robot is planning a path
+  GOAL_NOT_REACHED = "GOAL_NOT_REACHED", // When the robot has not found its goal
 }
 
 export enum RobotControllers {
@@ -64,6 +67,8 @@ export type AlgorithmPayload = {
 export type ActivityHistory = {
   timeTaken?: number | null; // in milliseconds, null means it was a permanent goal
   goal: Goal;
+  expired: boolean;
+  maxIterations: boolean;
 };
 
 export type RobotConstructorArgs = {
@@ -83,7 +88,7 @@ export class Robot extends CircleObstacle {
   private pose: Pose;
   private irSensors: IRSensor[];
   private usSensors: USSensor[];
-  private status: RobotStatus = RobotStatus.MAPPING; // TODO: Change this back to IDLE once debugging is done with mapping
+  private status: RobotStatus = RobotStatus.MAPPING_COMPLETE; // TODO: Change this back to IDLE once debugging is done with mapping
   private previousStatus: RobotStatus = RobotStatus.MAPPING;
   private currentGoal: Goal | undefined = undefined; // A robot's current goal can be undefined
   private activityHistory: ActivityHistory[] = [];
@@ -103,6 +108,7 @@ export class Robot extends CircleObstacle {
   private currentController: RobotControllers = RobotControllers.GO_TO_GOAL;
   private isCurrentlyMapping: boolean = false;
   private leaderPosition: Point;
+  private pathPoints: Point[] = [];
 
   constructor(
     vector: Vector,
@@ -321,34 +327,54 @@ export class Robot extends CircleObstacle {
 
   private goalReached = () => {
     if (this.currentGoal) {
-      this.currentGoal.setStatusToReached();
+      this.currentGoal.setStatus(GoalStatus.REACHED);
 
       this.activityHistory.push({
         goal: this.currentGoal,
         timeTaken: this.currentGoal.getTimeTaken(),
+        expired: false,
+        maxIterations: false,
       });
 
       this.currentGoal = undefined;
+
+      this.setStatus(RobotStatus.GOAL_REACHED);
     }
   };
 
-  private goalNotReached = () => {
+  private goalNotReached = (expired: boolean, algoFail: boolean) => {
     if (this.currentGoal) {
-      this.activityHistory.push({ goal: this.currentGoal });
+      this.currentGoal.setStatus(GoalStatus.NOT_REACHED);
+
+      this.activityHistory.push({
+        goal: this.currentGoal,
+        expired,
+        maxIterations: algoFail,
+      });
 
       this.currentGoal = undefined;
+
+      // Reset robot status here
+      this.setStatus(RobotStatus.GOAL_NOT_REACHED);
     }
   };
 
   public checkGoal = () => {
     if (this.currentGoal && this.currentGoal.checkForCollisionWithRobot(this)) {
       this.goalReached();
+      this.resetPathPoints();
       return this.id;
     } else if (this.currentGoal && this.currentGoal.isExpired()) {
-      this.goalNotReached();
+      this.goalNotReached(true, false);
+      this.resetPathPoints();
       return this.id;
     }
     return null;
+  };
+
+  public removeGoal = (algoFail: boolean) => {
+    this.goalNotReached(false, algoFail);
+    this.resetPathPoints();
   };
 
   public mappingGoalReached = () => {
@@ -356,12 +382,14 @@ export class Robot extends CircleObstacle {
     const removedMappingGoal = newMappingGoals.shift();
     this.mappingGoals = newMappingGoals;
 
-    removedMappingGoal?.setStatusToReached();
+    removedMappingGoal?.setStatus(GoalStatus.REACHED);
 
     if (removedMappingGoal) {
       this.activityHistory.push({
         goal: removedMappingGoal,
         timeTaken: removedMappingGoal.getTimeTaken(),
+        expired: false,
+        maxIterations: false,
       });
     }
 
@@ -439,6 +467,7 @@ export class Robot extends CircleObstacle {
       front_sensor_distances,
       ir_sensors,
       leader_position: this.leaderPosition,
+      path_points: this.pathPoints,
     };
     if (closestGoalPoint) {
       return {
@@ -602,6 +631,60 @@ export class Robot extends CircleObstacle {
   public getCurrentController = () => {
     return this.currentController;
   };
+
+  public setPathPoints = (
+    pathPoints: Point[] | any[],
+    fromPayload: boolean = false
+  ) => {
+    if (fromPayload) {
+      // console.log(this.generatePathPoints(pathPoints));
+      this.pathPoints = this.generatePathPoints(pathPoints);
+    } else {
+      this.pathPoints = pathPoints;
+    }
+  };
+
+  public generatePathPoints = (payload: any[]) => {
+    return payload.flat().map((point) => {
+      // console.log(point);
+      return new Point(point.x, point.y);
+    });
+  };
+
+  public getPathPoints = () => {
+    return this.pathPoints;
+  };
+
+  public resetPathPoints = () => {
+    this.pathPoints = [];
+  };
+
+  public generateActivityHistoryPayload = () => {
+    return this.activityHistory.map((activity) => {
+      const goal: any = {
+        point: activity.goal.getPoints()[0],
+        robot_id: activity.goal.getRobotId(),
+      };
+
+      const expiryDate = activity.goal.getExpiryDate();
+
+      if (expiryDate) {
+        goal.expiry_date = expiryDate.toISOString();
+      }
+
+      const payload: any = {
+        goal,
+        expired: activity.expired,
+        max_iterations: activity.maxIterations,
+      };
+
+      if (activity.timeTaken && activity.timeTaken !== null) {
+        payload.time_taken = activity.timeTaken;
+      }
+
+      return payload;
+    });
+  };
 }
 
 export type SensorReadingsPerRegion = {
@@ -613,6 +696,7 @@ export class LeaderRobot extends Robot {
   private numberOfRegions: number;
   private regions: Region[];
   private sensorReadingsPerRegion: SensorReadingsPerRegion[];
+  private robotIdsToPlanPathFor: number[] = [];
 
   constructor(
     robot: RobotConstructorArgs,
@@ -668,5 +752,17 @@ export class LeaderRobot extends Robot {
         }
       ),
     };
+  };
+
+  public addRobotIdsToPlanPathFor = (id: number) => {
+    this.robotIdsToPlanPathFor.push(id);
+  };
+
+  public getRobotIdsToPlanPathFor = () => {
+    return this.robotIdsToPlanPathFor;
+  };
+
+  public hasRobotIdToPlanPathFor = (id: number) => {
+    return this.robotIdsToPlanPathFor.includes(id);
   };
 }

@@ -32,3 +32,12 @@ export const executeGenerateMap = async (payload: object) => {
   });
   return await response.json();
 };
+
+export const executeLogActivityHistory = async (payload: object) => {
+  const response = await fetch(`${process.env.API_URL}/log_activity_history/`, {
+    method: "POST",
+    headers: API_HEADERS,
+    body: JSON.stringify(payload),
+  });
+  return await response.json();
+};

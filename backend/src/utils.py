@@ -5,6 +5,7 @@ from typing import List
 
 import cv2
 from algorithm.controllers.mapping.mapping import SensorReadingsPerRegion
+from src.api_models import _ActivityHistory
 from models.region import Region
 from src.api_models import _Mapping
 from src.api_models import _Robot
@@ -49,8 +50,13 @@ def transform_robot_api_model(robot: _Robot):
             mapping_goals.append(Point(goal.x, goal.y))
 
     leader_position = Point(robot.leader_position.x, robot.leader_position.y)
+
+    path_points: List[Point] = []
+    if (len(robot.path_points) > 0):
+        for point in robot.path_points:
+            path_points.append(Point(point.x, point.y))
     
-    return robot.id, pose, robot.sensor_readings, current_goal, robot.pid_metadata, robot.robots_within_signal_range, mapping_goals, robot.status, transform_sensor_readings(robot.ir_sensors), robot.front_sensor_distances, leader_position
+    return robot.id, pose, robot.sensor_readings, current_goal, robot.pid_metadata, robot.robots_within_signal_range, mapping_goals, robot.status, transform_sensor_readings(robot.ir_sensors), robot.front_sensor_distances, leader_position, path_points
 
 
 def transform_mapping_api_model(mapping: _Mapping):
@@ -79,8 +85,40 @@ def transform_mapping_api_model(mapping: _Mapping):
 
         regions.append(Region(region.id, points, entry_points, region.connected_region_ids))
 
-    return mapping.width, mapping.height, mapping.number_of_regions, region_points, sensor_readings_per_region
+    return mapping.width, mapping.height, mapping.number_of_regions, region_points, sensor_readings_per_region, regions
+
+
+def transform_activity_history_api_model(activity_histories: List[List[_ActivityHistory]]):
+    activity_histories_dict = {}
+    for idx, activity_history in enumerate(activity_histories):
+        activity_histories = []
+        for activity in activity_history:
+            activity_dict = {
+                "goal": {
+                    "point": (activity.goal.point.x, activity.goal.point.y),
+                    "robot_id": activity.goal.robot_id
+                },
+                "expired": activity.expired,
+                "max_iterations": activity.max_iterations,
+            }
+            if activity.goal.expiry_date is not None:
+                activity_dict["goal"]["expiry_date"] = activity.goal.expiry_date
+            
+            if activity.time_taken is not None:
+                activity_dict["time_taken"] = activity.time_taken
+            
+            activity_histories.append(activity_dict)
+
+        activity_histories_dict[idx] = activity_histories
+
+    return activity_histories_dict
 
 
 def save_image(name: str, dir: str, content):
     cv2.imwrite(f'{dir}{name}', content)
+
+
+def save_data_to_file(replacement_data, file_path):
+    # Dump data to file
+    with open(file_path, "w") as f:
+        f.write(json.dumps(replacement_data))

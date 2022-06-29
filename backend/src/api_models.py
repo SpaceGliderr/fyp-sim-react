@@ -31,6 +31,7 @@ class _Robot(BaseModel):
     front_sensor_distances: List[float]
     ir_sensors: List[_SensorReading]
     leader_position: _Point
+    path_points: List[_Point]
     current_goal: _Point = None # optional, a robot can not have a goal at a given time
     pid_metadata: _PIDMetadata # optional, pid metadata for the robot
     robots_within_signal_range: List[int] # optional, list of robots within signal range of the robot
@@ -71,3 +72,22 @@ class _Mapping(BaseModel):
     number_of_regions: int
     regions: List[_Region]
     sensor_readings_per_region: List[_SensorReadingsPerRegion]
+
+
+class _GroundTruthMap(BaseModel):
+    width: int
+    height: int
+    obstacles: List[List[_Point]]
+
+
+class _Goal(BaseModel):
+    point: _Point
+    robot_id: int
+    expiry_date: str = None # optional, a goal can not have an expiry date at a given time
+
+
+class _ActivityHistory(BaseModel):
+    goal: _Goal
+    expired: bool
+    max_iterations: bool
+    time_taken: float = None

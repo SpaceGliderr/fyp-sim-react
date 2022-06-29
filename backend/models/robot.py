@@ -5,7 +5,7 @@ from src.api_models import _PIDMetadata, _SensorReading
 
 
 class Robot:
-    def __init__(self, id: int, pose: Pose, sensor_readings: List[_SensorReading], mapping_goals: List[Point], status: str, ir_sensors: List[Point], front_sensor_distances: List[float], leader_position: Point, current_goal: Point = None, pid_metadata: _PIDMetadata = None, robots_within_signal_range: List[int] = None) -> None:
+    def __init__(self, id: int, pose: Pose, sensor_readings: List[_SensorReading], mapping_goals: List[Point], status: str, ir_sensors: List[Point], front_sensor_distances: List[float], leader_position: Point, path_points: List[Point], current_goal: Point = None, pid_metadata: _PIDMetadata = None, robots_within_signal_range: List[int] = None) -> None:
         self.id = id
         self.pose = pose
         self.sensor_readings = sensor_readings
@@ -17,3 +17,4 @@ class Robot:
         self.ir_sensors = ir_sensors
         self.front_sensor_distances = front_sensor_distances
         self.leader_position = leader_position
+        self.path_points = path_points

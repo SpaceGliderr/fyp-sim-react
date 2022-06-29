@@ -10,7 +10,7 @@ export enum GoalShape {
   POLYGON = "POLYGON",
 }
 
-enum GoalStatus {
+export enum GoalStatus {
   NOT_REACHED = "NOT_REACHED",
   REACHED = "REACHED",
 }
@@ -63,8 +63,8 @@ export class Goal {
     return this.point;
   };
 
-  public setStatusToReached = () => {
-    this.status = GoalStatus.REACHED;
+  public setStatus = (status: GoalStatus) => {
+    this.status = status;
   };
 
   public getRobotId = () => {

@@ -6,12 +6,14 @@ import { Goal } from "./goal";
 import { Map, MappingGoal } from "./map";
 import { CircleObstacle, DynamicObstacle, PolygonObstacle } from "./obstacles";
 import { AlgorithmPayload, LeaderRobot, Robot, RobotStatus } from "./robot";
+import { PATH_POINT_ERROR_MARGIN } from "./settings";
 
 export enum SimulatorAction {
   MAPPING = "MAPPING",
   MAPPING_COMPLETE = "MAPPING_COMPLETE",
   GENERATE_MAP = "GENERATE_MAP",
   NAVIGATION = "NAVIGATION",
+  COMPLETE = "COMPLETE",
 }
 
 export enum CommunicationPurpose {
@@ -26,7 +28,7 @@ export class Simulator {
   private goals?: Goal[];
   private map: Map;
   private leaderRobot: LeaderRobot;
-  private action: SimulatorAction = SimulatorAction.MAPPING; // Default after initializing is mapping
+  private action: SimulatorAction = SimulatorAction.NAVIGATION; // Default after initializing is mapping
   private mappingGoals: MappingGoal[];
   private width: number;
   private height: number;
@@ -176,6 +178,15 @@ export class Simulator {
         }) as Goal[];
       }
     });
+  };
+
+  public removeGoal = (robot: Robot, algoFail: boolean) => {
+    robot.removeGoal(algoFail);
+    this.goals = filter(this.goals, (goal) => {
+      if (goal.getRobotId() !== robot.getId()) {
+        return goal;
+      }
+    }) as Goal[];
   };
 
   public checkRobotMappingGoals = () => {
@@ -355,16 +366,24 @@ export class Simulator {
     purpose: CommunicationPurpose,
     robot: Robot
   ) => {
+    const inRange = includes(
+      robot.getRobotsWithinSignalRange(),
+      this.leaderRobot.getId()
+    );
     switch (purpose) {
       case CommunicationPurpose.GIVE_SENSOR_READINGS:
-        if (
-          includes(robot.getRobotsWithinSignalRange(), this.leaderRobot.getId())
-        ) {
+        if (inRange) {
           this.leaderRobot.transferSensorReadingData(robot);
           robot.setStatus(RobotStatus.MAPPING_COMPLETE);
         }
         break;
       case CommunicationPurpose.PATH_PLAN:
+        if (inRange) {
+          this.leaderRobot.addRobotIdsToPlanPathFor(robot.getId());
+          robot.setStatus(RobotStatus.PLAN_PATH);
+        } else {
+          robot.setStatus(RobotStatus.FIND_LEADER);
+        }
         break;
       default:
         break;
@@ -385,5 +404,48 @@ export class Simulator {
 
   public getHeight = () => {
     return this.height;
+  };
+
+  public navigation = () => {
+    this.robots.forEach((robot) => {
+      if (
+        robot.getCurrentGoal() &&
+        (robot.getStatus() === RobotStatus.MAPPING_COMPLETE ||
+          robot.getStatus() === RobotStatus.GOAL_REACHED ||
+          robot.getStatus() === RobotStatus.GOAL_NOT_REACHED ||
+          robot.getStatus() === RobotStatus.FIND_LEADER)
+      ) {
+        this.communicateWithLeader(CommunicationPurpose.PATH_PLAN, robot);
+      } else if (
+        robot.getPathPoints().length > 0 &&
+        robot.getStatus() === RobotStatus.NAVIGATION
+      ) {
+        const currentPoint = robot.getPathPoints()[0];
+        const pointDiff = robot.getPose().getPoint().subtract(currentPoint);
+
+        // Check if pointDiff has a +- 0.5 error
+        console.log(pointDiff.unpack());
+        if (
+          pointDiff.getX() > -PATH_POINT_ERROR_MARGIN &&
+          pointDiff.getX() < PATH_POINT_ERROR_MARGIN &&
+          pointDiff.getY() > -PATH_POINT_ERROR_MARGIN &&
+          pointDiff.getY() < PATH_POINT_ERROR_MARGIN
+        ) {
+          console.log("REMOVED");
+          const newPathPoints = robot.getPathPoints().slice(1);
+          robot.setPathPoints(newPathPoints);
+
+          if (newPathPoints.length == 0) {
+            robot.setStatus(RobotStatus.GOAL_REACHED);
+          }
+        }
+      }
+    });
+  };
+
+  public generateActivityHistories = () => {
+    return this.robots.map((robot) => {
+      return robot.generateActivityHistoryPayload();
+    });
   };
 }

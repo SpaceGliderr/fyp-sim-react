@@ -6,3 +6,4 @@ dependencies:
       - fastapi
       - "uvicorn[standard]"
       - opencv-python
+      - scikit-learn

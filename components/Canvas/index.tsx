@@ -7,6 +7,7 @@ import {
   GOAL_SPAWN_RATE,
   GOAL_TIMER_DURATION,
   SENSOR_TICKS_PER_UPDATE,
+  TEST_TIME,
   TICKS_PER_UPDATE,
 } from "../../game/settings";
 import { Goal, GoalShape } from "../../game/goal";
@@ -15,9 +16,16 @@ import { Point } from "../../utils/coordinates";
 import {
   executeBatchAlgorithm,
   executeGenerateMap,
+  executeLogActivityHistory,
   executeSingleRobot,
 } from "../../public/api/algorithm";
 import { RobotStatus } from "../../game/robot";
+import {
+  RobotWorker,
+  RobotWorkerArgs,
+  RobotWorkerOperation,
+  RobotWorkerStatus,
+} from "../../typings/robot-worker";
 
 const Canvas = (props: CanvasProp) => {
   const { map: m } = props;
@@ -36,6 +44,8 @@ const Canvas = (props: CanvasProp) => {
   ); // First simulator action state is MAPPING procedure
   const [currentRobotId, setCurrentRobotId] = useState<number>(0); // Current robot id that is being controlled
   const numberOfRobots = simulator.getRobots().length; // Number of robots in the simulator
+  const [robotWorkers, setRobotWorkers] = useState<RobotWorker[]>([]); // Array of workers that are running the robots
+  const [testIteration, setTestIteration] = useState<number>(0); // Current test iteration
 
   // ========================= SIMULATOR ACTIONS =========================
   const updateAction = useCallback(() => {
@@ -101,6 +111,8 @@ const Canvas = (props: CanvasProp) => {
       }
 
       simulator.mappingComplete();
+    } else if (simulatorAction === SimulatorAction.NAVIGATION) {
+      simulator.navigation();
     }
   }, [simulator, simulatorAction, currentRobotId, numberOfRobots]);
 
@@ -156,6 +168,10 @@ const Canvas = (props: CanvasProp) => {
   // ========================= COMPONENT RENDERING =========================
   // This useEffect hook will act as the refresh loop for moving objects on the dynamic canvas
   useEffect(() => {
+    if (simulatorAction === SimulatorAction.COMPLETE) {
+      return;
+    }
+
     // Set the ticker here
     const ticker = setInterval(() => {
       // Clear the dynamic canvas before rendering the new frame
@@ -185,13 +201,43 @@ const Canvas = (props: CanvasProp) => {
 
   // This useEffect hook will act as the sensor reading loop for the robots
   useEffect(() => {
+    if (simulatorAction === SimulatorAction.COMPLETE) {
+      return;
+    }
+
     const ticker = setInterval(() => {
       // Apply sensor readings every 20ms
       simulator.readRobotSensors();
+
+      if (simulatorAction === SimulatorAction.NAVIGATION) {
+        setTestIteration((prev) => {
+          // console.log(prev);
+          return prev + 20;
+        });
+      }
     }, SENSOR_TICKS_PER_UPDATE);
 
     return () => clearInterval(ticker);
-  }, [simulator]);
+  }, [simulator, simulatorAction]);
+
+  useEffect(() => {
+    if (simulatorAction === SimulatorAction.COMPLETE) {
+      return;
+    }
+
+    if (testIteration === TEST_TIME) {
+      console.log("COMPLETED");
+
+      const response = executeLogActivityHistory(
+        simulator.generateActivityHistories()
+      );
+      response
+        .then(() => {
+          simulator.setAction(SimulatorAction.COMPLETE);
+        })
+        .catch(() => {});
+    }
+  }, [simulator, simulatorAction, testIteration]);
 
   // ========================= SPAWNER WORKER =========================
   useEffect(() => {
@@ -231,6 +277,147 @@ const Canvas = (props: CanvasProp) => {
       };
     }
   }, [spawnerWorker, simulator]);
+
+  // ========================= ROBOT WORKERS =========================
+  useEffect(() => {
+    const robots = simulator.getRobots();
+
+    if (simulatorAction === SimulatorAction.NAVIGATION) {
+      const ticker = setInterval(() => {
+        if (robotWorkers.length === 0) {
+          const robotWorkersArray: RobotWorker[] = [];
+          for (let i = 0; i < numberOfRobots; i++) {
+            const worker = new Worker("./workers/robot.js", { type: "module" });
+            robotWorkersArray.push({
+              status: RobotWorkerStatus.IDLE,
+              worker,
+            });
+          }
+          setRobotWorkers(robotWorkersArray);
+        } else {
+          const robotIdsToPlanPathFor = simulator
+            .getLeaderRobot()
+            .getRobotIdsToPlanPathFor();
+
+          robots.forEach((robot) => {
+            const id = robot.getId();
+            const { status, worker } = robotWorkers[id];
+            let args: RobotWorkerArgs = {
+              payload: robot.generatePayload(),
+            };
+
+            if (
+              simulator.getLeaderRobot().hasRobotIdToPlanPathFor(id) &&
+              robot.getStatus() === RobotStatus.PLAN_PATH &&
+              robot.getCurrentGoal()
+            ) {
+              args.operation = RobotWorkerOperation.PLAN_PATH;
+              args.payload = {
+                robot: robot.generatePayload(),
+                mapping: simulator
+                  .getLeaderRobot()
+                  .generateMappingPayload(
+                    simulator.getWidth(),
+                    simulator.getHeight()
+                  ),
+              };
+            } else if (
+              robot.getStatus() === RobotStatus.NAVIGATION &&
+              robot.getPathPoints().length > 0
+            ) {
+              args.operation = RobotWorkerOperation.NAVIGATE;
+            } else if (robot.getStatus() === RobotStatus.FIND_LEADER) {
+              args.operation = RobotWorkerOperation.FIND_LEADER;
+            } else if (robot.getStatus() === RobotStatus.COLLISION) {
+              args.operation = RobotWorkerOperation.COLLISION;
+            }
+
+            if (status === RobotWorkerStatus.IDLE) {
+              worker.postMessage(JSON.stringify(args));
+              setRobotWorkers((prev) => {
+                prev[id].status = RobotWorkerStatus.PROCESSING;
+                return prev;
+              });
+            }
+          });
+
+          robotIdsToPlanPathFor.forEach((robotId) => {
+            const { status, worker } = robotWorkers[robotId];
+            const robot = robots[robotId];
+
+            if (
+              status === RobotWorkerStatus.IDLE &&
+              robot.getCurrentGoal() &&
+              robot.getStatus() === RobotStatus.PLAN_PATH
+            ) {
+              worker.postMessage(JSON.stringify(robot.generatePayload()));
+              setRobotWorkers((prev) => {
+                prev[robotId].status = RobotWorkerStatus.PROCESSING;
+                return prev;
+              });
+            }
+          });
+        }
+      }, TICKS_PER_UPDATE);
+
+      return () => clearInterval(ticker);
+    }
+  }, [
+    simulatorAction,
+    numberOfRobots,
+    robotWorkers,
+    setRobotWorkers,
+    simulator,
+  ]);
+
+  useEffect(() => {
+    const robots = simulator.getRobots();
+
+    if (
+      simulatorAction === SimulatorAction.NAVIGATION &&
+      robotWorkers.length === numberOfRobots
+    ) {
+      robotWorkers.forEach(({ worker }, idx) => {
+        worker.onmessage = (event: any) => {
+          const { data } = event;
+          const { operation, payload } = data;
+
+          const robot = robots[idx];
+
+          if (operation === RobotWorkerOperation.PLAN_PATH.toString()) {
+            if (payload.flat().length > 0) {
+              if (typeof payload.flat()[0] === "string") {
+                simulator.removeGoal(robot, true);
+              } else {
+                robot.setPathPoints(payload, true);
+                robot.setStatus(RobotStatus.NAVIGATION);
+              }
+            } else {
+              // Remove goal as it is unreachable
+              simulator.removeGoal(robot, false);
+            }
+          } else if (
+            operation === RobotWorkerOperation.NAVIGATE.toString() ||
+            operation === RobotWorkerOperation.FIND_LEADER.toString() ||
+            operation === RobotWorkerOperation.COLLISION.toString()
+          ) {
+            robot.execute(payload);
+          }
+
+          setRobotWorkers((prev) => {
+            prev[idx].status = RobotWorkerStatus.IDLE;
+            return prev;
+          });
+        };
+      });
+    }
+  }, [
+    simulatorAction,
+    robotWorkers,
+    numberOfRobots,
+    setRobotWorkers,
+    simulator,
+  ]);
 
   return (
     <div>

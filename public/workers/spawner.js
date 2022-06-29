@@ -1,4 +1,4 @@
-let goalDuration = 40;
+let goalDuration = 100;
 
 const generateGoalsForRobots = (data) => {
   // 0. Define variables
@@ -86,7 +86,7 @@ const generateGoal = (width, height, robot) => {
 };
 
 const generateRandomNumber = (min, max) => {
-  return Math.random() * (max - min + 1) + min;
+  return Math.round(Math.random() * (max - min + 1) + min);
 };
 
 const circleCircleIntersect = (c1, c2) => {
