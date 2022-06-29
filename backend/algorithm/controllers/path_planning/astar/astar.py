@@ -27,19 +27,21 @@ class AStar:
         ]
         self.number_of_nodes = 0
         self.number_of_expansions = 0
+        self.max_iterations = 3000
 
         # Initialize window related variables
-        self.window_size = int(settings.ROBOT_RADIUS_IN_PX + settings.WINDOW_OFFSET_IN_PX)
-        self.window_mask = np.pad(np.full((30, 30), 255, dtype=np.uint8), 2, mode="constant")
+        self.validity_window_size = int(settings.ROBOT_RADIUS_IN_PX + settings.PX_AWAY_FROM_OBSTACLE)
+        self.validity_window = np.full((self.validity_window_size * 2, self.validity_window_size * 2), 255, dtype=np.uint8)
+        self.path_cost_window_size = self.validity_window_size + settings.WINDOW_BUFFER_PX
 
 
     def is_point_valid(self, point: Point):
         """
         Returns True if the point is valid
         """
-        window = self.get_window(point)
+        window = self.get_window(point, self.validity_window_size)
         inverse_window = cv2.bitwise_not(window)
-        result = cv2.bitwise_and(inverse_window, self.window_mask)
+        result = cv2.bitwise_and(inverse_window, self.validity_window)
         return not np.sum(result) >= 255
 
 
@@ -47,26 +49,26 @@ class AStar:
         return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2))
 
 
-    def get_sizes(self, point: Point):
+    def get_sizes(self, point: Point, size: int):
         """
         Returns the sizes of the window
         """
         x, y = point.unpack()
-        return x - self.window_size, y - self.window_size, x + self.window_size, y + self.window_size
+        return x - size, y - size, x + size, y + size
 
 
-    def get_window(self, point: Point):
+    def get_window(self, point: Point, size: int):
         """
         Returns a window of size window_size around the point
         """
-        window = np.zeros((34, 34), dtype=np.uint8)
+        window = np.zeros((size * 2, size * 2), dtype=np.uint8)
 
-        x_min, y_min, x_max, y_max = self.get_sizes(point)
+        x_min, y_min, x_max, y_max = self.get_sizes(point, size)
 
         start_x = 0
-        end_x = self.window_size * 2
+        end_x = size * 2
         start_y = 0
-        end_y = self.window_size * 2
+        end_y = size * 2
 
         if x_min < 0:
             start_x = abs(x_min)
@@ -81,7 +83,7 @@ class AStar:
             end_y = abs(self.height - y_max)
             y_max = self.height
         
-        window[start_y:end_y, start_x:end_x] = self.final_map[y_min:y_max, x_min:x_max]
+        window[int(start_y):int(end_y), int(start_x):int(end_x)] = self.final_map[int(y_min):int(y_max), int(x_min):int(x_max)]
 
         return window
 
@@ -90,9 +92,12 @@ class AStar:
         """
         Calculates the path cost of moving from one node to another
         """
-        window = self.get_window(point)
+        window = self.get_window(point, self.path_cost_window_size)
         inverse_window = cv2.bitwise_not(window)
-        return np.sum(inverse_window)
+
+        row, col = inverse_window.shape
+
+        return np.sum(inverse_window) / (row * col)
 
 
     def get_total_cost(self, p1: Point, p2: Point):
@@ -145,7 +150,10 @@ class AStar:
         initial_f = self.calculate_euclidean_distance(start_point, goal_point)
         frontier.append(AStarNode(self.number_of_nodes, self.number_of_expansions, start_point, initial_f))
 
-        while not is_goal_found:
+        # Iterations
+        iterations = 0
+
+        while not is_goal_found and iterations < self.max_iterations:
             # Goal test before expansion
             if frontier[0].point.equal(goal_point):
                 goal_node = frontier[0]
@@ -171,6 +179,14 @@ class AStar:
 
             # Sort the frontier by the F cost
             frontier.sort(key=lambda x: x.f)
+
+            iterations = iterations + 1
+
+        if goal_node is None:
+            print("Could not find goal with max iterations")
+            return []
+
+        print("Found goal with max iterations: " + str(iterations))
 
         # # Get the path from the goal node
         path = [goal_node.point]
