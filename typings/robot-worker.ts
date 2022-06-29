@@ -12,6 +12,7 @@ export enum RobotWorkerOperation {
   PLAN_PATH = "PLAN_PATH",
   FIND_LEADER = "FIND_LEADER",
   NAVIGATE = "NAVIGATE",
+  COLLISION = "COLLISION",
 }
 
 export type RobotWorkerArgs = {

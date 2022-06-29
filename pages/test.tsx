@@ -10,7 +10,7 @@ import { Point } from "../utils/coordinates";
 
 const Test: NextPage = () => {
   // Declare selected map
-  const map = useMemo(() => new Map(MAP_3), []);
+  const map = useMemo(() => new Map(MAP_2), []);
 
   // Instantiate the simulator class based on the chosen map
   const simulator = useMemo(() => new Simulator(map), [map]);
@@ -62,9 +62,9 @@ const Test: NextPage = () => {
   // };
 
   const executeAlgorithm = async () => {
-    const robot = simulator.getRobotById(1);
+    const robot = simulator.getRobotById(0);
     robot.setCurrentGoal(
-      new Goal([new Point(680, 17)], GoalShape.CIRCLE, 0, 7, new Date())
+      new Goal([new Point(800, 40)], GoalShape.CIRCLE, 0, 7, new Date())
     );
     const response = await fetch(`${process.env.API_URL}/test_plan_path/`, {
       method: "POST",

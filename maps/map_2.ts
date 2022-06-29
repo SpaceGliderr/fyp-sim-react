@@ -157,7 +157,7 @@ export const MAP_2: MapTemplate = {
         new Point(480, 640),
       ],
       [new Point(480, 470)],
-      [1]
+      [0]
     ),
   ],
   numberOfRegions: 2,
