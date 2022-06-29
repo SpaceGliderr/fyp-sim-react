@@ -1,0 +1,101 @@
+{
+  "0": [
+    {
+      "goal": {
+        "point": [782.0, 529.0],
+        "robot_id": 0,
+        "expiry_date": "2022-06-29T14:47:43.605Z"
+      },
+      "expired": false
+    },
+    {
+      "goal": {
+        "point": [777.0, 330.0],
+        "robot_id": 0,
+        "expiry_date": "2022-06-29T14:47:48.604Z"
+      },
+      "expired": false,
+      "time_taken": -16952.0
+    },
+    {
+      "goal": {
+        "point": [356.0, 533.0],
+        "robot_id": 0,
+        "expiry_date": "2022-06-29T14:48:13.605Z"
+      },
+      "expired": false,
+      "time_taken": -20008.0
+    },
+    {
+      "goal": {
+        "point": [47.0, 421.0],
+        "robot_id": 0,
+        "expiry_date": "2022-06-29T14:48:33.605Z"
+      },
+      "expired": false,
+      "time_taken": -27501.0
+    },
+    {
+      "goal": {
+        "point": [489.0, 278.0],
+        "robot_id": 0,
+        "expiry_date": "2022-06-29T14:48:48.606Z"
+      },
+      "expired": false
+    },
+    {
+      "goal": {
+        "point": [672.0, 89.0],
+        "robot_id": 0,
+        "expiry_date": "2022-06-29T14:48:53.606Z"
+      },
+      "expired": false
+    }
+  ],
+  "1": [
+    {
+      "goal": {
+        "point": [806.0, 148.0],
+        "robot_id": 1,
+        "expiry_date": "2022-06-29T14:47:43.605Z"
+      },
+      "expired": false,
+      "time_taken": -30335.0
+    },
+    {
+      "goal": {
+        "point": [775.0, 374.0],
+        "robot_id": 1,
+        "expiry_date": "2022-06-29T14:47:53.605Z"
+      },
+      "expired": false,
+      "time_taken": -31622.0
+    },
+    {
+      "goal": {
+        "point": [575.0, 109.0],
+        "robot_id": 1,
+        "expiry_date": "2022-06-29T14:48:03.605Z"
+      },
+      "expired": false,
+      "time_taken": -29050.0
+    },
+    {
+      "goal": {
+        "point": [178.0, 228.0],
+        "robot_id": 1,
+        "expiry_date": "2022-06-29T14:48:18.605Z"
+      },
+      "expired": false
+    },
+    {
+      "goal": {
+        "point": [618.0, 445.0],
+        "robot_id": 1,
+        "expiry_date": "2022-06-29T14:48:23.605Z"
+      },
+      "expired": false,
+      "time_taken": -20668.0
+    }
+  ]
+}

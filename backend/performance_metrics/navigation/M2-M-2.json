@@ -1,0 +1,83 @@
+{
+  "0": [
+    {
+      "goal": {
+        "point": [1039.0, 468.0],
+        "robot_id": 0,
+        "expiry_date": "2022-06-29T16:19:50.155Z"
+      },
+      "expired": false,
+      "max_iterations": false,
+      "time_taken": -14864.0
+    },
+    {
+      "goal": {
+        "point": [1099.0, 696.0],
+        "robot_id": 0,
+        "expiry_date": "2022-06-29T16:20:20.155Z"
+      },
+      "expired": false,
+      "max_iterations": false,
+      "time_taken": -20179.0
+    }
+  ],
+  "1": [
+    {
+      "goal": { "point": [460.0, 460.0], "robot_id": 1 },
+      "expired": false,
+      "max_iterations": false
+    },
+    {
+      "goal": {
+        "point": [628.0, 59.0],
+        "robot_id": 1,
+        "expiry_date": "2022-06-29T16:19:50.156Z"
+      },
+      "expired": false,
+      "max_iterations": false,
+      "time_taken": -24137.0
+    },
+    {
+      "goal": {
+        "point": [323.0, 276.0],
+        "robot_id": 1,
+        "expiry_date": "2022-06-29T16:20:10.155Z"
+      },
+      "expired": false,
+      "max_iterations": false,
+      "time_taken": -25821.0
+    }
+  ],
+  "2": [
+    {
+      "goal": {
+        "point": [1034.0, 267.0],
+        "robot_id": 2,
+        "expiry_date": "2022-06-29T16:19:50.156Z"
+      },
+      "expired": false,
+      "max_iterations": false,
+      "time_taken": -27467.0
+    },
+    {
+      "goal": {
+        "point": [454.0, 53.0],
+        "robot_id": 2,
+        "expiry_date": "2022-06-29T16:20:05.154Z"
+      },
+      "expired": false,
+      "max_iterations": false,
+      "time_taken": -14812.0
+    },
+    {
+      "goal": {
+        "point": [466.0, 33.0],
+        "robot_id": 2,
+        "expiry_date": "2022-06-29T16:20:35.156Z"
+      },
+      "expired": false,
+      "max_iterations": false,
+      "time_taken": -39734.0
+    }
+  ]
+}
