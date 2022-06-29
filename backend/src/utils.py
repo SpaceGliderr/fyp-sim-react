@@ -84,8 +84,14 @@ def transform_mapping_api_model(mapping: _Mapping):
 
         regions.append(Region(region.id, points, entry_points, region.connected_region_ids))
 
-    return mapping.width, mapping.height, mapping.number_of_regions, region_points, sensor_readings_per_region
+    return mapping.width, mapping.height, mapping.number_of_regions, region_points, sensor_readings_per_region, regions
 
 
 def save_image(name: str, dir: str, content):
     cv2.imwrite(f'{dir}{name}', content)
+
+
+def save_data_to_file(replacement_data, file_path):
+    # Dump data to file
+    with open(file_path, "w") as f:
+        f.write(json.dumps(replacement_data))
