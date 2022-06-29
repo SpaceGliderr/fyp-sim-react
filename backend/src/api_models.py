@@ -72,3 +72,20 @@ class _Mapping(BaseModel):
     number_of_regions: int
     regions: List[_Region]
     sensor_readings_per_region: List[_SensorReadingsPerRegion]
+
+
+class _GroundTruthMap(BaseModel):
+    width: int
+    height: int
+    obstacles: List[List[_Point]]
+
+
+class _Goal(BaseModel):
+    point: _Point
+    robot_id: int
+    expiry_date: str = None # optional, a goal can not have an expiry date at a given time
+
+
+class _ActivityHistory(BaseModel):
+    goal: _Goal
+    time_taken: float = None
