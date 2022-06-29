@@ -1,13 +1,17 @@
+from typing import List
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from algorithm.algorithm import BaseAlgorithm
 from algorithm.arbiter import Arbiter
 from algorithm.controllers.mapping.mapping import Mapping
 from algorithm.controllers.path_planning.path_to_goal import PathToGoal
+from src.api_models import _ActivityHistory
+from src.api_models import _GroundTruthMap
 from src.api_models import _Mapping
 from src.utils import transform_mapping_api_model
 from src.api_models import _Robot
 from src.api_models import _Algorithm
+from performance_metrics.generate_ground_truth import generate_ground_truth
 
 import src.utils as utils
 
@@ -49,7 +53,7 @@ def single_robot(robot: _Robot):
 
 @app.post("/generate_map/")
 def generate_map(raw_mapping: _Mapping):
-    width, height, number_of_regions, region_points, sensor_readings_per_region = transform_mapping_api_model(raw_mapping)
+    width, height, number_of_regions, region_points, sensor_readings_per_region, _ = transform_mapping_api_model(raw_mapping)
     mapping = Mapping(width, height, number_of_regions, region_points, sensor_readings_per_region)
     mapping.clear_map_json()
     mapping.store_raw_data()
@@ -57,9 +61,31 @@ def generate_map(raw_mapping: _Mapping):
 
 
 @app.post("/plan_path/")
-def plan_path(robot: _Robot):
+def plan_path(robot: _Robot, mapping: _Mapping):
     robot = utils.transform_robot_api_model(robot)
+    mapping = utils.transform_mapping_api_model(mapping)
     print("Robot ID >>> ", robot[0])
-    path_to_goal = PathToGoal(robot[1], robot[3])
+    path_to_goal = PathToGoal(robot[1], robot[3], mapping[5])
+    navigation_paths = path_to_goal.execute()
+    return navigation_paths
+
+
+@app.post("/generate_ground_truth_map/")
+def generate_ground_truth_map(ground_truth: _GroundTruthMap):
+    generate_ground_truth(ground_truth)
+    return "Success"
+
+
+@app.post("/log_activity_history/")
+def log_activity_history(activity_histories: List[List[_ActivityHistory]]):
+    utils.save_data_to_file(activity_histories, "./activity_history_log.json")
+
+
+@app.post("/test_plan_path/")
+def test_plan_path(robot: _Robot, mapping: _Mapping):
+    robot = utils.transform_robot_api_model(robot)
+    mapping = utils.transform_mapping_api_model(mapping)
+    print("Robot ID >>> ", robot[0])
+    path_to_goal = PathToGoal(robot[1], robot[3], mapping[5])
     navigation_paths = path_to_goal.execute()
     return navigation_paths
