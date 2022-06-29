@@ -7,6 +7,7 @@ import {
   GOAL_SPAWN_RATE,
   GOAL_TIMER_DURATION,
   SENSOR_TICKS_PER_UPDATE,
+  TEST_TIME,
   TICKS_PER_UPDATE,
 } from "../../game/settings";
 import { Goal, GoalShape } from "../../game/goal";
@@ -218,7 +219,7 @@ const Canvas = (props: CanvasProp) => {
 
     if (simulatorAction === SimulatorAction.NAVIGATION) {
       console.log("STARTED");
-      const ticker = setInterval(() => {}, 60000);
+      const ticker = setInterval(() => {}, TEST_TIME);
 
       const response = executeLogActivityHistory(
         simulator.generateActivityHistories()
