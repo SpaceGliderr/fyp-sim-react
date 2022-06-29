@@ -88,7 +88,7 @@ export class Robot extends CircleObstacle {
   private pose: Pose;
   private irSensors: IRSensor[];
   private usSensors: USSensor[];
-  private status: RobotStatus = RobotStatus.MAPPING_COMPLETE; // TODO: Change this back to IDLE once debugging is done with mapping
+  private status: RobotStatus = RobotStatus.MAPPING; // TODO: Change this back to IDLE once debugging is done with mapping
   private previousStatus: RobotStatus = RobotStatus.MAPPING;
   private currentGoal: Goal | undefined = undefined; // A robot's current goal can be undefined
   private activityHistory: ActivityHistory[] = [];

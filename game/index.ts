@@ -28,7 +28,7 @@ export class Simulator {
   private goals?: Goal[];
   private map: Map;
   private leaderRobot: LeaderRobot;
-  private action: SimulatorAction = SimulatorAction.NAVIGATION; // Default after initializing is mapping
+  private action: SimulatorAction = SimulatorAction.MAPPING; // Default after initializing is mapping
   private mappingGoals: MappingGoal[];
   private width: number;
   private height: number;
