@@ -24,14 +24,16 @@ def generate_confusion_matrix():
         # print(confusion_matrix(ground_truth.flatten(), original.flatten()).ravel())
         # print(classification_report(gt_thresh.flatten(), ori_thresh.flatten()))
 
-        otn, ofp, ofn, otp = confusion_matrix(gt_thresh.flatten(), ori_thresh.flatten()).ravel()
-        mtn, mfp, mfn, mtp = confusion_matrix(gt_thresh.flatten(), morph_thresh.flatten()).ravel()
+        otn, ofp, ofn, otp = confusion_matrix(gt_thresh.flatten(), ori_thresh.flatten(), labels=[0, 255]).ravel()
+        mtn, mfp, mfn, mtp = confusion_matrix(gt_thresh.flatten(), morph_thresh.flatten(), labels=[0, 255]).ravel()
 
-        ori_classification_report = classification_report(gt_thresh.flatten(), ori_thresh.flatten())
-        morph_classification_report = classification_report(gt_thresh.flatten(), morph_thresh.flatten())
+        ori_classification_report = classification_report(gt_thresh.flatten(), ori_thresh.flatten(), labels=[0, 255])
+        morph_classification_report = classification_report(gt_thresh.flatten(), morph_thresh.flatten(), labels=[0, 255])
 
         # Print results
         print(f'Map {i + 1}')
+        print(confusion_matrix(gt_thresh.flatten(), ori_thresh.flatten(), labels=[0, 255]))
+        print(confusion_matrix(gt_thresh.flatten(), morph_thresh.flatten(), labels=[0, 255]))
         print(f'Original Map Confusion Matrix\nTN: {otn}\nFP: {ofp}\nFN: {ofn}\nTP: {otp}\n')
         print(f'Morph Map Confusion Matrix\nTN: {mtn}\nFP: {mfp}\nFN: {mfn}\nTP: {mtp}\n')
         print("Original Map Classification Report\n", ori_classification_report)
