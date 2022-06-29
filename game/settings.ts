@@ -70,3 +70,5 @@ export const CLOSE_DISTANCE_IN_CM = 6; // in cm
 export const CLOSE_DISTANCE_IN_PX = CLOSE_DISTANCE_IN_CM * PIXEL_TO_CM_RATIO;
 
 export const OBSTACLE_DETECTION_SENSOR_LOCS = [0, 45, 90, 270, 315];
+
+export const PATH_POINT_ERROR_MARGIN = 0.5; // in px
