@@ -71,4 +71,14 @@ export class Map {
       mappingGoals: this.mappingGoals,
     };
   };
+
+  public getGroundTruthPayload = () => {
+    return {
+      width: this.width,
+      height: this.height,
+      obstacles: this.staticObstacles.map((obstacle) => {
+        return obstacle.getPoints();
+      }),
+    };
+  };
 }
