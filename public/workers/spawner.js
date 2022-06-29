@@ -1,4 +1,4 @@
-let goalDuration = 60;
+let goalDuration = 100;
 
 const generateGoalsForRobots = (data) => {
   // 0. Define variables
