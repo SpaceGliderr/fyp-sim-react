@@ -109,10 +109,15 @@ class PathToGoal:
             # Trigger the A Star algorithm
             path = self.a_star.search(point.round(), end_point)
 
+            if isinstance(path[0], str):
+                navigation_paths = path
+                break
+
             # Add the path to the navigation paths
             navigation_paths.append(path)
 
         # Visualize the navigation paths
-        self.visualize(list(np.concatenate(navigation_paths).flat))
+        if not isinstance(path[0], str):
+            self.visualize(list(np.concatenate(navigation_paths).flat))
 
         return navigation_paths

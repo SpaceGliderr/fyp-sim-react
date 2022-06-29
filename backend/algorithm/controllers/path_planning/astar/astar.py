@@ -184,7 +184,7 @@ class AStar:
 
         if goal_node is None:
             print("Could not find goal with max iterations")
-            return []
+            return ["Max Iterations Reached"]
 
         print("Found goal with max iterations: " + str(iterations))
 

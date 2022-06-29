@@ -64,9 +64,13 @@ def generate_map(raw_mapping: _Mapping):
 def plan_path(robot: _Robot, mapping: _Mapping):
     robot = utils.transform_robot_api_model(robot)
     mapping = utils.transform_mapping_api_model(mapping)
-    path_to_goal = PathToGoal(robot[1], robot[3], mapping[5])
-    navigation_paths = path_to_goal.execute()
-    return navigation_paths
+    try:
+        path_to_goal = PathToGoal(robot[1], robot[3], mapping[5])
+        navigation_paths = path_to_goal.execute()
+        return navigation_paths
+    except Exception as e:
+        print(e)
+        return []
 
 
 @app.post("/generate_ground_truth_map/")
@@ -77,7 +81,9 @@ def generate_ground_truth_map(ground_truth: _GroundTruthMap):
 
 @app.post("/log_activity_history/")
 def log_activity_history(activity_histories: List[List[_ActivityHistory]]):
-    utils.save_data_to_file(activity_histories, "./activity_history_log.json")
+    activity_histories_transformed = utils.transform_activity_history_api_model(activity_histories)
+    print(activity_histories_transformed)
+    utils.save_data_to_file(replacement_data=activity_histories_transformed, file_path="./src/activity_history_log.json")
 
 
 @app.post("/test_plan_path/")
