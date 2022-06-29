@@ -6,12 +6,14 @@ import { Goal } from "./goal";
 import { Map, MappingGoal } from "./map";
 import { CircleObstacle, DynamicObstacle, PolygonObstacle } from "./obstacles";
 import { AlgorithmPayload, LeaderRobot, Robot, RobotStatus } from "./robot";
+import { PATH_POINT_ERROR_MARGIN } from "./settings";
 
 export enum SimulatorAction {
   MAPPING = "MAPPING",
   MAPPING_COMPLETE = "MAPPING_COMPLETE",
   GENERATE_MAP = "GENERATE_MAP",
   NAVIGATION = "NAVIGATION",
+  COMPLETE = "COMPLETE",
 }
 
 export enum CommunicationPurpose {
@@ -26,7 +28,7 @@ export class Simulator {
   private goals?: Goal[];
   private map: Map;
   private leaderRobot: LeaderRobot;
-  private action: SimulatorAction = SimulatorAction.MAPPING; // Default after initializing is mapping
+  private action: SimulatorAction = SimulatorAction.NAVIGATION; // Default after initializing is mapping
   private mappingGoals: MappingGoal[];
   private width: number;
   private height: number;
@@ -355,16 +357,24 @@ export class Simulator {
     purpose: CommunicationPurpose,
     robot: Robot
   ) => {
+    const inRange = includes(
+      robot.getRobotsWithinSignalRange(),
+      this.leaderRobot.getId()
+    );
     switch (purpose) {
       case CommunicationPurpose.GIVE_SENSOR_READINGS:
-        if (
-          includes(robot.getRobotsWithinSignalRange(), this.leaderRobot.getId())
-        ) {
+        if (inRange) {
           this.leaderRobot.transferSensorReadingData(robot);
           robot.setStatus(RobotStatus.MAPPING_COMPLETE);
         }
         break;
       case CommunicationPurpose.PATH_PLAN:
+        if (inRange) {
+          this.leaderRobot.addRobotIdsToPlanPathFor(robot.getId());
+          robot.setStatus(RobotStatus.PLAN_PATH);
+        } else {
+          robot.setStatus(RobotStatus.FIND_LEADER);
+        }
         break;
       default:
         break;
@@ -392,16 +402,11 @@ export class Simulator {
       if (
         robot.getCurrentGoal() &&
         (robot.getStatus() === RobotStatus.MAPPING_COMPLETE ||
-          robot.getStatus() === RobotStatus.GOAL_REACHED)
+          robot.getStatus() === RobotStatus.GOAL_REACHED ||
+          robot.getStatus() === RobotStatus.GOAL_NOT_REACHED ||
+          robot.getStatus() === RobotStatus.FIND_LEADER)
       ) {
-        if (
-          includes(robot.getRobotsWithinSignalRange(), this.leaderRobot.getId())
-        ) {
-          this.leaderRobot.addRobotIdsToPlanPathFor(robot.getId());
-          robot.setStatus(RobotStatus.PLAN_PATH);
-        } else {
-          robot.setStatus(RobotStatus.FIND_LEADER);
-        }
+        this.communicateWithLeader(CommunicationPurpose.PATH_PLAN, robot);
       } else if (
         robot.getPathPoints().length > 0 &&
         robot.getStatus() === RobotStatus.NAVIGATION
@@ -412,10 +417,10 @@ export class Simulator {
         // Check if pointDiff has a +- 0.5 error
         if (
           !(
-            pointDiff.getX() > -0.5 &&
-            pointDiff.getX() < 0.5 &&
-            pointDiff.getY() > -0.5 &&
-            pointDiff.getY() < 0.5
+            pointDiff.getX() > -PATH_POINT_ERROR_MARGIN &&
+            pointDiff.getX() < PATH_POINT_ERROR_MARGIN &&
+            pointDiff.getY() > -PATH_POINT_ERROR_MARGIN &&
+            pointDiff.getY() < PATH_POINT_ERROR_MARGIN
           )
         ) {
           const newPathPoints = robot.getPathPoints().slice(1);
@@ -426,6 +431,12 @@ export class Simulator {
           }
         }
       }
+    });
+  };
+
+  public generateActivityHistories = () => {
+    return this.robots.map((robot) => {
+      return robot.generateActivityHistoryPayload();
     });
   };
 }
