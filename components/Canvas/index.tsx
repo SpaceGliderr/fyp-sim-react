@@ -15,6 +15,7 @@ import { Point } from "../../utils/coordinates";
 import {
   executeBatchAlgorithm,
   executeGenerateMap,
+  executeLogActivityHistory,
   executeSingleRobot,
 } from "../../public/api/algorithm";
 import { RobotStatus } from "../../game/robot";
@@ -219,7 +220,14 @@ const Canvas = (props: CanvasProp) => {
       console.log("STARTED");
       const ticker = setInterval(() => {}, 60000);
 
-      simulator.setAction(SimulatorAction.COMPLETE);
+      const response = executeLogActivityHistory(
+        simulator.generateActivityHistories()
+      );
+      response
+        .then(() => {
+          simulator.setAction(SimulatorAction.COMPLETE);
+        })
+        .catch(() => {});
       console.log("COMPLETED");
 
       return () => clearInterval(ticker);
