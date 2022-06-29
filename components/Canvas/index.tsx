@@ -165,6 +165,10 @@ const Canvas = (props: CanvasProp) => {
   // ========================= COMPONENT RENDERING =========================
   // This useEffect hook will act as the refresh loop for moving objects on the dynamic canvas
   useEffect(() => {
+    if (simulatorAction === SimulatorAction.COMPLETE) {
+      return;
+    }
+
     // Set the ticker here
     const ticker = setInterval(() => {
       // Clear the dynamic canvas before rendering the new frame
@@ -194,13 +198,33 @@ const Canvas = (props: CanvasProp) => {
 
   // This useEffect hook will act as the sensor reading loop for the robots
   useEffect(() => {
+    if (simulatorAction === SimulatorAction.COMPLETE) {
+      return;
+    }
+
     const ticker = setInterval(() => {
       // Apply sensor readings every 20ms
       simulator.readRobotSensors();
     }, SENSOR_TICKS_PER_UPDATE);
 
     return () => clearInterval(ticker);
-  }, [simulator]);
+  }, [simulator, simulatorAction]);
+
+  useEffect(() => {
+    if (simulatorAction === SimulatorAction.COMPLETE) {
+      return;
+    }
+
+    if (simulatorAction === SimulatorAction.NAVIGATION) {
+      console.log("STARTED");
+      const ticker = setInterval(() => {}, 60000);
+
+      simulator.setAction(SimulatorAction.COMPLETE);
+      console.log("COMPLETED");
+
+      return () => clearInterval(ticker);
+    }
+  }, [simulator, simulatorAction]);
 
   // ========================= SPAWNER WORKER =========================
   useEffect(() => {
@@ -269,14 +293,21 @@ const Canvas = (props: CanvasProp) => {
               payload: robot.generatePayload(),
             };
 
-            console.log(robot.getStatus());
-
             if (
               simulator.getLeaderRobot().hasRobotIdToPlanPathFor(id) &&
               robot.getStatus() === RobotStatus.PLAN_PATH &&
               robot.getCurrentGoal()
             ) {
               args.operation = RobotWorkerOperation.PLAN_PATH;
+              args.payload = {
+                robot: robot.generatePayload(),
+                mapping: simulator
+                  .getLeaderRobot()
+                  .generateMappingPayload(
+                    simulator.getWidth(),
+                    simulator.getHeight()
+                  ),
+              };
             } else if (
               robot.getStatus() === RobotStatus.NAVIGATION &&
               robot.getPathPoints().length > 0
@@ -339,10 +370,8 @@ const Canvas = (props: CanvasProp) => {
           const robot = robots[idx];
 
           if (operation === RobotWorkerOperation.PLAN_PATH.toString()) {
-            console.log("lkJBAKSDJBGLAKSJDBG");
             robot.setPathPoints(payload, true);
             robot.setStatus(RobotStatus.NAVIGATION);
-            console.log(robot.getPathPoints());
           } else if (
             operation === RobotWorkerOperation.NAVIGATE.toString() ||
             operation === RobotWorkerOperation.FIND_LEADER.toString()
